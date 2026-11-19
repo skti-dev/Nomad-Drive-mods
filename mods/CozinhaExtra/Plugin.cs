@@ -13,7 +13,7 @@ namespace CozinhaExtra
     {
         public const string Guid = "seabra.nomaddrive.cozinhaextra";
         public const string Name = "Cozinha Extra";
-        public const string Version = "1.4.2";
+        public const string Version = "1.4.3";
 
         internal static ManualLogSource Log;
 
@@ -47,6 +47,7 @@ namespace CozinhaExtra
         private void Update()
         {
             Items.Tick();
+            MugSkins.Tick();
             Server.Tick();
             PotPatcher.Tick();
             Client.Tick();
@@ -124,7 +125,7 @@ namespace CozinhaExtra
 
             TestKitEnabled = c.Bind("Teste", "KitDeTeste", false,
                 "Liga o kit de teste: quem hospeda aperta a tecla abaixo e aparecem um fogão, uma panela, " +
-                "2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato e uma mesa na frente. Para testar o mod; deixe desligado no jogo normal.");
+                "2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato e uma mesa na frente (e até 2 canecas de outros mods, se instalados). Para testar o mod; deixe desligado no jogo normal.");
             ConfigEntry<string> kitKey = c.Bind("Teste", "TeclaKitDeTeste", "F8", "Tecla do kit de teste (só para quem hospeda).");
             if (Enum.TryParse(kitKey.Value, true, out Key parsedKit) && parsedKit != Key.None)
             {

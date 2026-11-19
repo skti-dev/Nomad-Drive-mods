@@ -20,6 +20,7 @@ Game.cs        consultas ao jogo (id do item, é panela?, item da mão validado,
 Patches.cs     ganchos Harmony (ver abaixo), cada um com TryPatch
 PotPatcher.cs  panela aceita tomate/batata no modo de colocação; lista de panelas da cena
 WorldItems.cs  SaveRestore (itens do mod no save) e LootPlates (pratos pelo mapa)
+MugSkins.cs    caneca de sopa feita em caneca de outro mod: origem (assetId+GUID), cor, ícone, devolução
 TestKit.cs     F8 no host cria fogão, panela, ingredientes, água, caneca, prato e mesa
 ActionHint.cs  linha própria no painel de ações do jogo
 ```
@@ -35,6 +36,13 @@ próprios, registrados com `NetworkClient.RegisterPrefab` em todo PC (`Items.Ens
 | Caneca de sopa de tomate / batata | `TomatoSoup` + malha/materiais da `Mug` | `…04` / `…05` | 11 / 12 | `CozinhaExtra:TomatoSoupMug` / `…PotatoSoupMug` |
 
 `Kind` = `SoupType` (+10 se caneca). Caneca **vazia** é a `Mug` do jogo (não é item do mod).
+
+**Canecas de outros mods (1.4.3):** qualquer caneca com o componente `Mug` serve. Se o assetId dela
+não é o da caneca branca, a caneca de sopa guarda `CePlate.SourceAssetId/SourceGuid`, copia os materiais
+do `Model` do prefab de origem e usa o ícone dele (config clonado e cacheado). A chave de save vira
+`CozinhaExtra:TomatoSoupMug|<assetId hex>|<guid>` e, ao comer, volta o prefab de origem com aquele GUID.
+Clientes recebem a origem por `CeMugSkin` (só protocolo ≥ 2), guardam por `netId` (`MugSkins.Known`) e
+reaplicam em `CePlate.Start`, porque o jogo recria loot que sai e volta do alcance.
 Fome/sede da sopa: `ConsumableConfig` criado pelo mod (`SetupSoupFood`), valores do `.cfg`.
 
 ### Fluxos principais
@@ -50,7 +58,9 @@ Fome/sede da sopa: `ConsumableConfig` criado pelo mod (`SetupSoupFood`), valores
   `GameSaveService.SpawnFromRecordAsync` → `SaveRestore.Spawn`. Conteúdo das panelas fica em
   `BepInEx\config\CozinhaExtra.panelas.txt` (pelo GUID persistente da panela).
 - **Handshake:** host tem o mod se um item do mod aparece (`CePlate.Awake`) ou pelo beacon
-  (`Net.BeaconNetId` via `ObjectHideMessage`); só então o cliente manda `Hello`.
+  (`Net.BeaconNetId` via `ObjectHideMessage`); só então o cliente manda `Hello`, com
+  `Target = Net.Protocol` (1.4.2 = 0; 1.4.3 = 2). O host guarda `ProtocolOf[conexão]` e só manda
+  mensagem nova a quem tem protocolo suficiente (mensagem desconhecida derruba o cliente no Mirror).
 
 ### Ganchos (Patches.cs)
 | Alvo | Lado | Para quê |

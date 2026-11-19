@@ -1,4 +1,4 @@
-COZINHA EXTRA 1.4.2 - mod para Nomad Drive
+COZINHA EXTRA 1.4.3 - mod para Nomad Drive
 ==========================================
 
 Tudo usa a tecla K (o painel de ações do jogo mostra o que ela vai fazer).
@@ -35,6 +35,8 @@ Prato e caneca
 - O prato ou a caneca de sopa é comida normal do jogo (botão de comer, cabe na
   hotbar) e mata a fome e a sede.
 - Depois de comer, o prato vazio ou a caneca vazia volta para a sua mão.
+- Canecas de outros mods (ex.: as canecas coloridas do Nomad Items) mantêm a cor:
+  a caneca de sopa fica da mesma cor e a mesma caneca volta depois de tomar.
 - Pratos vazios empilham: coloque um prato em cima de outro pelo modo de colocação.
 
 Instalação (todos os jogadores precisam instalar)
@@ -43,7 +45,7 @@ Instalação (todos os jogadores precisam instalar)
    https://www.nexusmods.com/nomaddrive/mods/7
    Extraia na pasta do jogo (Steam > botão direito em Nomad Drive > Gerenciar >
    Procurar arquivos locais), de modo que o winhttp.dll fique ao lado de "Nomad Drive.exe".
-2. Extraia o CozinhaExtra-1.4.2.zip na mesma pasta. O resultado deve ser:
+2. Extraia o CozinhaExtra-1.4.3.zip na mesma pasta. O resultado deve ser:
    BepInEx\plugins\CozinhaExtra\CozinhaExtra.dll
 3. Abra o jogo pela Steam.
 
@@ -78,7 +80,8 @@ Kit de teste
 Para testar sem procurar itens: no mesmo arquivo, seção [Teste], mude KitDeTeste
 para true e reabra o jogo. Quem hospeda aperta F8 e aparecem na frente um fogão,
 uma panela, 2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato
-e uma mesa.
+e uma mesa. Com um mod de canecas coloridas instalado (ex.: Nomad Items), vêm
+também 2 canecas coloridas.
 Vem desligado. Desligue de novo depois de testar.
 
 Desinstalar

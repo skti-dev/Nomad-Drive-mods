@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using Mirror;
+using NomadDrive.Features.CoffeeBrewing;
 using NomadDrive.Features.Consumables;
 using NomadDrive.Features.LiquidTransferSystem;
 using NomadDrive.Features.SaveSystem;
@@ -14,7 +15,8 @@ using Object = UnityEngine.Object;
 namespace CozinhaExtra
 {
     // Kit para testar o mod: o host aperta a tecla e aparecem, na frente dele, um fogão,
-    // uma panela, tomates, batatas, garrafas de água cheias, uma caneca, um prato e uma mesa. Desligado por padrão
+    // uma panela, tomates, batatas, garrafas de água cheias, uma caneca, um prato e uma mesa, além de
+    // até 2 canecas de outros mods (ex.: coloridas do Nomad Items), se instalados. Desligado por padrão
     // (BepInEx\config\seabra.nomaddrive.cozinhaextra.cfg, seção [Teste]).
     // Usa o mesmo caminho do comando "world.spawnLoot" do console do jogo.
     internal static class TestKit
@@ -118,8 +120,49 @@ namespace CozinhaExtra
                 NetworkServer.Spawn(plate, NetworkServer.localConnection);
                 LootSpawningService.ApplyPostSpawnWorldIntegration(plate, Items.SaveKey(Items.EmptyPlate));
             }
+            // Canecas de outros mods (ex.: coloridas do Nomad Items), se houver: duas cores diferentes,
+            // uma para servir com a caneca na mão e outra para servir com a panela na mão.
+            if (NetworkServer.active)
+            {
+                SpawnOtherMugs(origin - right * 1.7f + Vector3.up * 0.35f, -right, forward);
+            }
             LootPlates.Suppressed = false;
             Plugin.Log.LogInfo("Kit de teste criado.");
+        }
+
+        private const int OtherMugs = 2;
+
+        // Qualquer prefab registrado no Mirror que seja caneca (componente Mug) e não a branca do jogo.
+        private static void SpawnOtherMugs(Vector3 start, Vector3 step, Vector3 forward)
+        {
+            NetworkIdentity white = Items.MugPrefab != null ? Items.MugPrefab.GetComponent<NetworkIdentity>() : null;
+            int spawned = 0;
+            foreach (GameObject prefab in NetworkClient.prefabs.Values)
+            {
+                if (spawned >= OtherMugs)
+                {
+                    break;
+                }
+                if (prefab == null || prefab.GetComponent<Mug>() == null)
+                {
+                    continue;
+                }
+                NetworkIdentity identity = prefab.GetComponent<NetworkIdentity>();
+                if (identity == null || identity.assetId == 0 || (white != null && identity.assetId == white.assetId))
+                {
+                    continue;
+                }
+                GameObject go = Object.Instantiate(prefab, start + step * (0.3f * spawned), Quaternion.LookRotation(-forward));
+                go.name = prefab.name;
+                go.SetActive(true);
+                NetworkServer.Spawn(go, NetworkServer.localConnection);
+                LootSpawningService.ApplyPostSpawnWorldIntegration(go, MugSkins.PersistentGuidOf(prefab));
+                spawned++;
+            }
+            if (spawned == 0)
+            {
+                Plugin.Log.LogInfo("Kit de teste: nenhuma caneca de outro mod instalada (só a do jogo).");
+            }
         }
     }
 }

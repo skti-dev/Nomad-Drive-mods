@@ -63,6 +63,7 @@ namespace CozinhaExtra
                 NetworkClient.ReplaceHandler<CePotState>(OnPotState);
                 NetworkClient.ReplaceHandler<CeEquip>(OnEquip);
                 NetworkClient.ReplaceHandler<CeResult>(OnResult);
+                NetworkClient.ReplaceHandler<CeMugSkin>(OnMugSkin);
                 _handlersRegistered = true;
             }
 
@@ -112,6 +113,7 @@ namespace CozinhaExtra
                 }
             }
             Visuals.Clear();
+            MugSkins.Reset();
             Hint.Hide();
         }
 
@@ -125,7 +127,13 @@ namespace CozinhaExtra
                 return;
             }
             _helloSent = true;
-            NetworkClient.Send(new CeRequest { Action = (byte)CeAction.Hello });
+            // Target do Hello = versão das mensagens que este cliente entende.
+            NetworkClient.Send(new CeRequest { Action = (byte)CeAction.Hello, Target = Net.Protocol });
+        }
+
+        private static void OnMugSkin(CeMugSkin msg)
+        {
+            MugSkins.Remember(msg.Item, msg.Source);
         }
 
         private static void OnPotState(CePotState msg)

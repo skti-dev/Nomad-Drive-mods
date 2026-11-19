@@ -1,6 +1,6 @@
 # [0001] Canecas coloridas mantêm a cor ao servir sopa e ao devolver
 
-- Status: rascunho
+- Status: concluída (em `staging`; teste em co-op pendente antes de publicar)
 - Tipo: correção
 - Mod: CozinhaExtra
 - Versão alvo: 1.4.3
@@ -82,7 +82,7 @@ mesmo prefab ao devolver. As canecas coloridas mantêm o componente `Mug` do jog
   só não pode dar erro (cai para branca).
 
 ## Riscos / questões em aberto
-1. **Ícone na hotbar:** a caneca de sopa usa o ícone da caneca branca; o Nomad Items tinge o ícone de
+1. **Ícone na hotbar** — *decidido em 2026-11-19: incluir.* a caneca de sopa usa o ícone da caneca branca; o Nomad Items tinge o ícone de
    cada cor. Incluir ícone na cor certa nesta correção? (Recomendação: sim se sair barato, ex.: um
    `HeldItemConfig` por caneca de origem, cacheado; senão fica para depois.)
 2. **Identificar o prefab de origem no host:** o Nomad Items registra o prefab com

@@ -67,6 +67,13 @@ namespace CozinhaExtra
         public uint Item;
     }
 
+    // Host -> clientes com protocolo >= 2: esta caneca de sopa foi feita na caneca <Source> (assetId).
+    public struct CeMugSkin : NetworkMessage
+    {
+        public uint Item;
+        public uint Source;
+    }
+
     // Host -> quem pediu: resultado da ação.
     public struct CeResult : NetworkMessage
     {
@@ -79,6 +86,12 @@ namespace CozinhaExtra
         // "Esconder objeto" com um netId que não existe: cliente sem o mod ignora (é uma mensagem
         // padrão do Mirror); cliente com o mod reconhece e sabe que o host tem o mod.
         public const uint BeaconNetId = 0xCE5AFEED;
+
+        // Versão das mensagens do mod, enviada no Hello (CeRequest.Target). 1.4.2 manda 0.
+        // 2 = entende CeMugSkin (1.4.3). O host só manda mensagem nova a quem disse que entende,
+        // porque o Mirror desconecta quem recebe mensagem desconhecida.
+        public const uint Protocol = 2;
+        public const uint ProtocolMugSkin = 2;
 
         // O weaver do Mirror não roda neste DLL, então os serializadores são registrados à mão.
         public static void RegisterSerializers()
@@ -110,7 +123,10 @@ namespace CozinhaExtra
             Writer<CeEquip>.write = (w, m) => w.WriteUInt(m.Item);
             Reader<CeEquip>.read = r => new CeEquip { Item = r.ReadUInt() };
 
-            Writer<CeResult>.write = (w, m) => { w.WriteByte(m.Code); w.WriteByte(m.Soup); };
+            Writer<CeMugSkin>.write = (w, m) => { w.WriteUInt(m.Item); w.WriteUInt(m.Source); };
+            Reader<CeMugSkin>.read = r => new CeMugSkin { Item = r.ReadUInt(), Source = r.ReadUInt() };
+
+            Writer<CeResult>.write =(w, m) => { w.WriteByte(m.Code); w.WriteByte(m.Soup); };
             Reader<CeResult>.read = r => new CeResult { Code = r.ReadByte(), Soup = r.ReadByte() };
         }
     }

@@ -38,10 +38,15 @@ namespace CozinhaExtra
             Vector3 position = origin != null ? origin.WorldToRender(record.Position) : record.Position;
             GameObject go = Object.Instantiate(template, position, record.Rotation);
             go.name = template.name;
+            // Caneca de sopa feita numa caneca de outro mod: a origem vem na própria chave.
+            Items.ParseSaveKey(record.AddressableGuid, out _, out uint sourceAsset, out string sourceGuid);
+            MugSkins.SetSource(go, sourceAsset, sourceGuid);
+            // A chave inteira (com a origem) continua sendo a gravada no próximo save.
             PersistentObject result = PersistentObject.ServerEnsure(go, record.AddressableGuid, record.Guid);
             NetworkServer.Spawn(go, NetworkServer.localConnection);
             // Raiz do mundo, igual ao jogo faz com o que restaura (guid nulo: o carimbo já foi feito acima).
             LootSpawningService.ApplyPostSpawnWorldIntegration(go, null);
+            Server.SendMugSkin(go);
             return result;
         }
     }

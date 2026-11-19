@@ -56,6 +56,9 @@ namespace CozinhaExtra
 
         private static readonly Dictionary<uint, PotData> Pots = new Dictionary<uint, PotData>();
         private static readonly HashSet<int> ModdedConnections = new HashSet<int>();
+        // Versão das mensagens que cada cliente entende (vem no Hello; 1.4.2 manda 0).
+        private static readonly Dictionary<int, uint> ProtocolOf = new Dictionary<int, uint>();
+        private static readonly List<int> GoneScratch = new List<int>();
         private static readonly Dictionary<int, float> LastRequest = new Dictionary<int, float>();
         private static readonly Dictionary<int, float> LastSpawn = new Dictionary<int, float>();
         private static readonly List<uint> Scratch = new List<uint>();
@@ -81,6 +84,7 @@ namespace CozinhaExtra
                     _registered = false;
                     Pots.Clear();
                     ModdedConnections.Clear();
+                    ProtocolOf.Clear();
                     PlacedSince.Clear();
                     Beaconed.Clear();
                     PlacedWarned.Clear();
@@ -241,6 +245,11 @@ namespace CozinhaExtra
             if (conn == null || conn.identity == null)
             {
                 return;
+            }
+            // Antes do SendAll, para ele já saber se pode mandar as canecas coloridas.
+            if (msg.Action == (byte)CeAction.Hello)
+            {
+                ProtocolOf[conn.connectionId] = msg.Target;
             }
             bool firstContact = ModdedConnections.Add(conn.connectionId);
             if (firstContact || msg.Action == (byte)CeAction.Hello)
@@ -429,9 +438,16 @@ namespace CozinhaExtra
                 return;
             }
             SoupType soup = pot.Soup;
+            // Caneca de outro mod (ex.: colorida): lida antes de a caneca sumir da mão.
+            uint sourceAsset = 0;
+            string sourceGuid = null;
+            if (isMug)
+            {
+                MugSkins.TryReadSource(held, out sourceAsset, out sourceGuid);
+            }
             held.ServerConsumeFromHand();
             TakePortion(pot);
-            SpawnIntoHand(template, conn);
+            SpawnIntoHand(template, conn, null, sourceAsset, sourceGuid);
             Reply(conn, CeFeedback.Served, soup);
         }
 
@@ -492,14 +508,23 @@ namespace CozinhaExtra
             {
                 SnappingPlanesManager.TryResolvePlane(placement.ParentNetworkID, placement.PlaneId, out plane);
             }
+            // Caneca de outro mod (ex.: colorida): lida antes de a caneca ser destruída.
+            uint sourceAsset = 0;
+            string sourceGuid = null;
+            if (isMug)
+            {
+                MugSkins.TryReadSource(container, out sourceAsset, out sourceGuid);
+            }
             Unplace(container.netId);
             NetworkServer.Destroy(container.gameObject);
             TakePortion(pot);
 
             GameObject go = Object.Instantiate(template, position, rotation);
             go.name = template.name;
+            MugSkins.SetSource(go, sourceAsset, sourceGuid);
             NetworkServer.Spawn(go, NetworkServer.localConnection);
-            LootSpawningService.ApplyPostSpawnWorldIntegration(go, Items.SaveKey(template));
+            LootSpawningService.ApplyPostSpawnWorldIntegration(go, Items.SaveKeyWithSource(template, sourceAsset, sourceGuid));
+            SendMugSkin(go);
             if (go.TryGetComponent(out Food food))
             {
                 food.ServerSetFreshMax();
@@ -629,8 +654,8 @@ namespace CozinhaExtra
             Reply(conn, CeFeedback.PlateTaken);
         }
 
-        // Chamado pelo patch do "comer": devolve o prato vazio ou uma caneca vazia do jogo.
-        public static void GiveContainerBack(NetworkConnectionToClient conn, bool mug)
+        // Chamado pelo patch do "comer": devolve o prato vazio ou a caneca (a mesma de antes, se veio de outro mod).
+        public static void GiveContainerBack(NetworkConnectionToClient conn, bool mug, uint sourceAsset, string sourceGuid)
         {
             if (!NetworkServer.active || !Items.Ready || conn?.identity == null)
             {
@@ -638,10 +663,27 @@ namespace CozinhaExtra
             }
             if (mug)
             {
-                // A caneca é um item do jogo: volta sempre e entra no save como loot normal.
-                LootRegistry registry = Resources.FindObjectsOfTypeAll<LootRegistry>().FirstOrDefault();
-                string guid = registry != null ? registry.GetByAddress(Items.MugKey)?.assetGuid : null;
-                SpawnIntoHand(Items.MugPrefab, conn, guid);
+                // A caneca devolvida passa pelo gancho de loot; não sorteia prato do lado dela.
+                bool wasSuppressed = LootPlates.Suppressed;
+                LootPlates.Suppressed = true;
+                try
+                {
+                    // Caneca de outro mod: o mesmo prefab, com o GUID de save dela (o mod dela restaura).
+                    if (sourceAsset != 0 && MugSkins.TryGetPrefab(sourceAsset, out GameObject sourcePrefab))
+                    {
+                        string sourceSave = !string.IsNullOrEmpty(sourceGuid) ? sourceGuid : MugSkins.PersistentGuidOf(sourcePrefab);
+                        SpawnIntoHand(sourcePrefab, conn, sourceSave);
+                        return;
+                    }
+                    // A caneca é um item do jogo: volta sempre e entra no save como loot normal.
+                    LootRegistry registry = Resources.FindObjectsOfTypeAll<LootRegistry>().FirstOrDefault();
+                    string guid = registry != null ? registry.GetByAddress(Items.MugKey)?.assetGuid : null;
+                    SpawnIntoHand(Items.MugPrefab, conn, guid);
+                }
+                finally
+                {
+                    LootPlates.Suppressed = wasSuppressed;
+                }
                 return;
             }
             if (Cfg.PlateBackAfterEating.Value)
@@ -665,11 +707,12 @@ namespace CozinhaExtra
         }
 
         // Cria o item na frente do jogador e pede para o cliente dele pegar (o "pegar" é sempre do cliente).
-        private static void SpawnIntoHand(GameObject template, NetworkConnectionToClient conn, string persistentGuid = null)
+        private static GameObject SpawnIntoHand(GameObject template, NetworkConnectionToClient conn, string persistentGuid = null,
+            uint sourceAsset = 0, string sourceGuid = null)
         {
             if (template == null || conn?.identity == null)
             {
-                return;
+                return null;
             }
             Transform player = conn.identity.transform;
             Vector3 forward = Vector3.ProjectOnPlane(player.forward, Vector3.up).normalized;
@@ -680,16 +723,21 @@ namespace CozinhaExtra
             Vector3 position = player.position + forward * 0.45f + Vector3.up * 1.1f;
             GameObject go = Object.Instantiate(template, position, Quaternion.LookRotation(forward));
             go.name = template.name;
+            // Prefab de outro mod pode estar guardado desativado (o Nomad Items faz o mesmo ao criar os dele).
+            go.SetActive(true);
+            MugSkins.SetSource(go, sourceAsset, sourceGuid);
             NetworkServer.Spawn(go, NetworkServer.localConnection);
             // Mesmo ajuste que o jogo faz no loot (raiz do mundo; registro no save se tiver guid).
-            LootSpawningService.ApplyPostSpawnWorldIntegration(go, persistentGuid ?? Items.SaveKey(template));
+            LootSpawningService.ApplyPostSpawnWorldIntegration(go, persistentGuid ?? Items.SaveKeyWithSource(template, sourceAsset, sourceGuid));
             if (go.TryGetComponent(out Food food))
             {
                 food.ServerSetFreshMax();
             }
+            SendMugSkin(go);
             conn.Send(new CeEquip { Item = go.GetComponent<NetworkIdentity>().netId });
             // Se ninguém pegar (mão ocupada, por exemplo), assenta onde caiu, preso ao veículo se for o caso.
             Runner.Instance?.StartCoroutine(SettleSoon(go.GetComponent<HeldItem>(), null, Vector3.zero, Quaternion.identity, 2.5f));
+            return go;
         }
 
         // Itens que o mod cria já no lugar precisam "assentar" como o jogo faz ao soltar um item:
@@ -769,6 +817,22 @@ namespace CozinhaExtra
             {
                 Beaconed.Remove(id);
             }
+            // Quem saiu deixa de contar como "tem o mod": o connectionId pode ser reaproveitado por outra pessoa.
+            GoneScratch.Clear();
+            foreach (int id in ModdedConnections)
+            {
+                if (!NetworkServer.connections.ContainsKey(id))
+                {
+                    GoneScratch.Add(id);
+                }
+            }
+            foreach (int id in GoneScratch)
+            {
+                ModdedConnections.Remove(id);
+                ProtocolOf.Remove(id);
+                LastRequest.Remove(id);
+                LastSpawn.Remove(id);
+            }
             foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
             {
                 if (conn != null && conn != NetworkServer.localConnection && conn.isReady && Beaconed.Add(conn.connectionId))
@@ -800,6 +864,48 @@ namespace CozinhaExtra
             foreach (KeyValuePair<uint, PotData> pair in Pots)
             {
                 conn.Send(pair.Value.ToMessage(pair.Key));
+            }
+            // Todas as canecas de sopa coloridas, inclusive as que esta pessoa ainda não está vendo.
+            if (!KnowsMugSkins(conn))
+            {
+                return;
+            }
+            foreach (CePlate plate in CePlate.Live)
+            {
+                if (plate == null || !plate.IsMug || plate.SourceAssetId == 0)
+                {
+                    continue;
+                }
+                NetworkIdentity identity = plate.GetComponent<NetworkIdentity>();
+                if (identity != null && identity.netId != 0)
+                {
+                    conn.Send(new CeMugSkin { Item = identity.netId, Source = plate.SourceAssetId });
+                }
+            }
+        }
+
+        private static bool KnowsMugSkins(NetworkConnectionToClient conn)
+        {
+            return conn != null && conn != NetworkServer.localConnection &&
+                   ProtocolOf.TryGetValue(conn.connectionId, out uint protocol) && protocol >= Net.ProtocolMugSkin;
+        }
+
+        // Conta a todos que entendem de qual caneca veio esta caneca de sopa (o host já aplicou no dele).
+        internal static void SendMugSkin(GameObject soupMug)
+        {
+            CePlate plate = soupMug != null ? soupMug.GetComponent<CePlate>() : null;
+            NetworkIdentity identity = soupMug != null ? soupMug.GetComponent<NetworkIdentity>() : null;
+            if (plate == null || plate.SourceAssetId == 0 || identity == null || identity.netId == 0)
+            {
+                return;
+            }
+            CeMugSkin msg = new CeMugSkin { Item = identity.netId, Source = plate.SourceAssetId };
+            foreach (NetworkConnectionToClient conn in NetworkServer.connections.Values)
+            {
+                if (KnowsMugSkins(conn))
+                {
+                    conn.Send(msg);
+                }
             }
         }
 

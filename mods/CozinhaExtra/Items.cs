@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using EvilCore;
 using Mirror;
@@ -23,6 +24,11 @@ namespace CozinhaExtra
 
         public byte Kind;
 
+        // Caneca de sopa feita numa caneca de outro mod: de qual caneca veio (0 = caneca branca do jogo).
+        public uint SourceAssetId;
+        // GUID de save da caneca de origem (host; para devolvê-la e gravar no save).
+        public string SourceGuid;
+
         public bool IsMug => Kind >= MugOffset;
 
         public bool IsEmptyPlate => Kind == 0;
@@ -36,6 +42,12 @@ namespace CozinhaExtra
         {
             // Só existe na cena se o host tiver o mod: serve de sinal para o cliente se apresentar.
             Client.OnModdedObjectSeen();
+        }
+
+        // Aqui o netId já existe: reaplica a cara da caneca de origem (também quando o jogo recria o item).
+        private void Start()
+        {
+            MugSkins.OnPlateStarted(this);
         }
 
         private void OnEnable()
@@ -110,7 +122,45 @@ namespace CozinhaExtra
         public static bool TryGetTemplate(string key, out GameObject template)
         {
             template = null;
-            return key != null && TemplatesByKey.TryGetValue(key, out template) && template != null;
+            if (key == null)
+            {
+                return false;
+            }
+            ParseSaveKey(key, out string baseKey, out _, out _);
+            return TemplatesByKey.TryGetValue(baseKey, out template) && template != null;
+        }
+
+        // Caneca de sopa feita numa caneca de outro mod: "CozinhaExtra:TomatoSoupMug|<assetId hex>|<guid>".
+        // Sem o mod, o jogo não acha o prefab e pula o registro, como com as outras chaves do mod.
+        public static string SaveKeyWithSource(GameObject template, uint sourceAssetId, string sourceGuid)
+        {
+            string key = SaveKey(template);
+            if (key == null || sourceAssetId == 0)
+            {
+                return key;
+            }
+            return key + "|" + sourceAssetId.ToString("X8") + "|" + (sourceGuid ?? string.Empty);
+        }
+
+        public static void ParseSaveKey(string key, out string baseKey, out uint sourceAssetId, out string sourceGuid)
+        {
+            baseKey = key;
+            sourceAssetId = 0;
+            sourceGuid = null;
+            if (key == null)
+            {
+                return;
+            }
+            string[] parts = key.Split(new[] { '|' }, 3);
+            baseKey = parts[0];
+            if (parts.Length >= 2 && uint.TryParse(parts[1], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint id))
+            {
+                sourceAssetId = id;
+            }
+            if (parts.Length >= 3 && parts[2].Length > 0)
+            {
+                sourceGuid = parts[2];
+            }
         }
 
         private static GameObject _holder;

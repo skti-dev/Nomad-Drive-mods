@@ -94,16 +94,31 @@ namespace CozinhaExtra
             }
         }
 
-        // Mesmas condições que o jogo confere antes de destruir a comida da mão.
-        private static void ConsumePrefix(Consumable __instance, NetworkConnectionToClient sender, out bool __state)
+        // O que foi comido, lido antes de o jogo destruir o item (sem guardar referência a objeto do Unity).
+        internal struct Eaten
         {
-            __state = false;
+            public bool Valid;
+            public bool IsMug;
+            public uint SourceAsset;
+            public string SourceGuid;
+        }
+
+        // Mesmas condições que o jogo confere antes de destruir a comida da mão.
+        private static void ConsumePrefix(Consumable __instance, NetworkConnectionToClient sender, out Eaten __state)
+        {
+            __state = default;
             try
             {
                 CePlate plate = __instance != null ? __instance.GetComponent<CePlate>() : null;
-                __state = plate != null && plate.Kind != 0 &&
-                          __instance.IsEquipped && !__instance.IsStowed && __instance.ServerContainer == null &&
-                          __instance.netIdentity.connectionToClient == sender;
+                __state.Valid = plate != null && plate.Kind != 0 &&
+                                __instance.IsEquipped && !__instance.IsStowed && __instance.ServerContainer == null &&
+                                __instance.netIdentity.connectionToClient == sender;
+                if (__state.Valid)
+                {
+                    __state.IsMug = plate.IsMug;
+                    __state.SourceAsset = plate.SourceAssetId;
+                    __state.SourceGuid = plate.SourceGuid;
+                }
             }
             catch (Exception e)
             {
@@ -111,16 +126,15 @@ namespace CozinhaExtra
             }
         }
 
-        private static void ConsumePostfix(Consumable __instance, NetworkConnectionToClient sender, bool __state)
+        private static void ConsumePostfix(NetworkConnectionToClient sender, Eaten __state)
         {
-            if (!__state)
+            if (!__state.Valid)
             {
                 return;
             }
             try
             {
-                CePlate plate = __instance != null ? __instance.GetComponent<CePlate>() : null;
-                Server.GiveContainerBack(sender, plate != null && plate.IsMug);
+                Server.GiveContainerBack(sender, __state.IsMug, __state.SourceAsset, __state.SourceGuid);
             }
             catch (Exception e)
             {
