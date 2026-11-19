@@ -45,6 +45,10 @@ Apple, Banana, Orange, Watermelon, Tomato, Potato, **Mushroom**, BakedBeans (lat
 - **Mirror limpa** handlers e a lista de prefabs ao trocar de partida: registre de novo a cada partida.
 - **Item clonado:** ajuste TODOS os colisores (caixa também), o `footprint` do `LootItemDefinition`
   (o encaixe usa ele) e lembre que colisores e pegadas da mão são filhos do `Model`.
+- **Loot longe some no cliente:** `LootInterestManagement` destrói loot fora do alcance (~80 m) no cliente e
+  recria do prefab quando volta (exceto preso a veículo não cortável). Estado visual mandado por mensagem
+  precisa ser guardado por `netId` e reaplicado quando o objeto reaparece.
+- Mensagem nova do mod ⇒ versione pelo Hello (`CeRequest.Target` = protocolo) para não derrubar cliente antigo.
 - **Moldes** ficam sob um objeto **inativo** (o `Awake` do jogo não roda no molde).
 - `ilspycmd` precisa de `DOTNET_ROLL_FORWARD=Major` (o script já faz).
 - PowerShell `Get-Content`/`Set-Content` estraga UTF-8 (acentos).

@@ -13,7 +13,7 @@ OUT="$ROOT/.game-sources"
 # ilspycmd foi feito para outra versão do .NET; isto deixa rodar no SDK instalado.
 export DOTNET_ROLL_FORWARD=Major
 
-for dll in Assembly-CSharp EvilCore EvilCore.Inputs EvilCore.Localization; do
+for dll in Assembly-CSharp EvilCore EvilCore.Inputs EvilCore.Localization Mirror; do
   echo "== $dll"
   rm -rf "$OUT/$dll"
   mkdir -p "$OUT/$dll"
