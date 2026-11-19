@@ -154,7 +154,9 @@ namespace CozinhaExtra
             {
                 case CeFeedback.Ate:
                     EatPortionLocally(soup);
-                    ShowToast(L.T("Você tomou ", "You had some ") + L.Soup(soup));
+                    ShowToast(L.Drink(soup)
+                        ? L.T("Você tomou ", "You had some ") + L.Soup(soup)
+                        : L.T("Você comeu ", "You ate some ") + L.Soup(soup));
                     break;
                 case CeFeedback.WaterAdded:
                     ShowToast(L.T("Água na panela", "Water added to the pot"));
@@ -166,6 +168,12 @@ namespace CozinhaExtra
                     }
                     ShowToast(L.Pt ? $"{Capitalize(L.Ingredient(soup))} na panela" : $"{Capitalize(L.Ingredient(soup))} added to the pot");
                     break;
+                case CeFeedback.CanPoured:
+                    ShowToast(L.T("Lata despejada na panela", "Can poured into the pot"));
+                    break;
+                case CeFeedback.PlateOnly:
+                    ShowToast(L.Pt ? $"{Capitalize(L.Soup(soup))} só vai no prato" : $"{Capitalize(L.Soup(soup))} only goes on a plate");
+                    break;
                 case CeFeedback.NoWater:
                     ShowToast(L.T("Sem água na mão ou na hotbar", "No water in your hand or hotbar"));
                     break;
@@ -176,19 +184,21 @@ namespace CozinhaExtra
                     ShowToast(L.Pt ? $"A panela já tem {L.Soup(soup)}" : $"The pot already has {L.Soup(soup)}");
                     break;
                 case CeFeedback.Served:
-                    ShowToast(L.T("Sopa servida", "Soup served"));
+                    ShowToast(L.T("Servido!", "Served!"));
                     break;
                 case CeFeedback.MugNotEmpty:
                     ShowToast(L.T("Esvazie a caneca primeiro", "Empty the mug first"));
                     break;
                 case CeFeedback.Evaporated:
-                    ShowToast(L.Pt ? $"Uma porção de {L.Soup(soup)} evaporou no fogo" : $"A portion of {L.Soup(soup)} boiled away");
+                    ShowToast(L.Drink(soup)
+                        ? (L.Pt ? $"Uma porção de {L.Soup(soup)} evaporou no fogo" : $"A portion of {L.Soup(soup)} boiled away")
+                        : (L.Pt ? $"Uma porção de {L.Soup(soup)} secou no fogo" : $"A portion of {L.Soup(soup)} dried out on the fire"));
                     break;
                 case CeFeedback.PlateTaken:
                     ShowToast(L.T("Você pegou um prato", "You took a plate"));
                     break;
                 case CeFeedback.PotEmpty:
-                    ShowToast(L.T("A panela está sem sopa", "There is no soup in the pot"));
+                    ShowToast(L.T("Não tem nada pronto na panela", "Nothing is ready in the pot"));
                     break;
                 case CeFeedback.Rotten:
                     ShowToast(L.T("Isso está estragado", "That is rotten"));
@@ -221,6 +231,7 @@ namespace CozinhaExtra
             }
             stats.Nutrition?.IncreaseValue(Cfg.Nutrition(soup));
             stats.Hydration?.IncreaseValue(Cfg.Hydration(soup));
+            stats.Energy?.IncreaseValue(Cfg.Energy(soup));
         }
 
         // O host criou um prato para nós: pega assim que ele aparecer (pegar é sempre do cliente).
@@ -311,28 +322,26 @@ namespace CozinhaExtra
                         Target = heldPot.netId,
                         Held = container.netId,
                         Pot = heldPot,
-                        Label = isMug ? L.T("Servir sopa na caneca", "Pour soup into the mug") : L.T("Servir sopa no prato", "Serve soup on the plate")
+                        Label = ServeLabel((SoupType)state.Soup, isMug)
                     };
                     return true;
                 }
             }
 
-            // Tomate ou batata na mão, mirando a panela.
-            if (hoverPot != null && held != null)
+            // Ingrediente fresco ou lata na mão, mirando a panela.
+            if (hoverPot != null && held != null && Recipes.TryIngredient(held.gameObject, out SoupType soup, out bool canned))
             {
-                SoupType soup = Game.SoupFor(held.gameObject);
-                if (soup != SoupType.None)
+                ctx = new Context
                 {
-                    ctx = new Context
-                    {
-                        Action = CeAction.AddIngredient,
-                        Target = hoverPot.netId,
-                        Held = held.netId,
-                        Pot = hoverPot,
-                        Label = L.Pt ? $"Colocar {L.Ingredient(soup)} na panela" : $"Put the {L.Ingredient(soup)} in the pot"
-                    };
-                    return true;
-                }
+                    Action = CeAction.AddIngredient,
+                    Target = hoverPot.netId,
+                    Held = held.netId,
+                    Pot = hoverPot,
+                    Label = canned
+                        ? L.T("Despejar na panela", "Pour into the pot")
+                        : (L.Pt ? $"Colocar {L.Ingredient(soup)} na panela" : $"Put the {L.Ingredient(soup)} in the pot")
+                };
+                return true;
             }
 
             // Prato vazio na mão, mirando a panela com sopa.
@@ -340,7 +349,7 @@ namespace CozinhaExtra
             {
                 if (state.Portions > 0)
                 {
-                    ctx = new Context { Action = CeAction.ServeToPlate, Target = hoverPot.netId, Held = held.netId, Pot = hoverPot, Label = L.T("Servir sopa no prato", "Serve soup on the plate") };
+                    ctx = new Context { Action = CeAction.ServeToPlate, Target = hoverPot.netId, Held = held.netId, Pot = hoverPot, Label = ServeLabel((SoupType)state.Soup, false) };
                     return true;
                 }
                 return false;
@@ -350,7 +359,7 @@ namespace CozinhaExtra
             if (hoverPot != null && held != null && state.Portions > 0 && Items.MugsReady &&
                 held.GetComponent<Mug>() != null && Game.IsEmptyContainer(held))
             {
-                ctx = new Context { Action = CeAction.ServeToPlate, Target = hoverPot.netId, Held = held.netId, Pot = hoverPot, Label = L.T("Servir sopa na caneca", "Pour soup into the mug") };
+                ctx = new Context { Action = CeAction.ServeToPlate, Target = hoverPot.netId, Held = held.netId, Pot = hoverPot, Label = ServeLabel((SoupType)state.Soup, true) };
                 return true;
             }
 
@@ -375,7 +384,9 @@ namespace CozinhaExtra
                     Action = CeAction.EatFromPot,
                     Target = pot.netId,
                     Pot = pot,
-                    Label = L.Pt ? $"Tomar {L.Soup((SoupType)state.Soup)}" : $"Have some {L.Soup((SoupType)state.Soup)}"
+                    Label = L.Drink((SoupType)state.Soup)
+                        ? (L.Pt ? $"Tomar {L.Soup((SoupType)state.Soup)}" : $"Have some {L.Soup((SoupType)state.Soup)}")
+                        : (L.Pt ? $"Comer {L.Soup((SoupType)state.Soup)}" : $"Eat some {L.Soup((SoupType)state.Soup)}")
                 };
                 return true;
             }
@@ -400,6 +411,19 @@ namespace CozinhaExtra
             return false;
         }
 
+        // "Servir feijão quente na caneca". Receita sem caneca (atum): a linha diz o porquê, e a tecla
+        // vira pedido que o host recusa com aviso.
+        private static string ServeLabel(SoupType soup, bool mug)
+        {
+            if (mug && Recipes.Get(soup) != null && Items.FilledMug(soup) == null)
+            {
+                return L.Pt ? $"{Capitalize(L.Soup(soup))} só vai no prato" : $"{Capitalize(L.Soup(soup))} only goes on a plate";
+            }
+            return mug
+                ? (L.Pt ? $"Servir {L.Soup(soup)} na caneca" : $"Pour the {L.Soup(soup)} into the mug")
+                : (L.Pt ? $"Servir {L.Soup(soup)} no prato" : $"Serve the {L.Soup(soup)} on the plate");
+        }
+
         // Linha de status embaixo da mira quando olhando/segurando uma panela com algo dentro.
         private static string BuildStatus()
         {
@@ -416,7 +440,7 @@ namespace CozinhaExtra
             {
                 pot = Game.AsCookingPot(equipment.EquippedEntity);
             }
-            if (!TryGetState(pot, out CePotState s) || (s.Water <= 0.001f && s.Raw == 0 && s.Portions == 0))
+            if (!TryGetState(pot, out CePotState s) || (s.Water <= 0.001f && s.Raw == 0 && s.Canned == 0 && s.Portions == 0))
             {
                 return null;
             }
@@ -443,6 +467,23 @@ namespace CozinhaExtra
                 else
                 {
                     parts.Add(what + L.T(" cozinhando ", " cooking ") + Mathf.RoundToInt(s.Progress * 100f) + "%");
+                }
+            }
+            if (s.Canned > 0)
+            {
+                // Latas não pedem água; com ingrediente fresco junto, o progresso é o da sopa (acima).
+                string cans = (s.Canned > 1 ? s.Canned + "x " : "") + L.T("lata", "can");
+                if (!pot.ReadyForCooking)
+                {
+                    parts.Add(cans + L.T(": ponha no fogo aceso", ": put it on a lit burner"));
+                }
+                else if (s.Raw == 0)
+                {
+                    parts.Add(cans + L.T(" esquentando ", " heating ") + Mathf.RoundToInt(s.Progress * 100f) + "%");
+                }
+                else
+                {
+                    parts.Add(cans + L.T(" esquentando", " heating"));
                 }
             }
             if (s.Portions > 0)
@@ -558,7 +599,8 @@ namespace CozinhaExtra
         public void Apply(CePotState s)
         {
             float capacity = Mathf.Max(0.01f, Cfg.PotCapacity.Value);
-            float volume = s.Water + s.Portions * Cfg.PortionVolume;
+            // Lata despejada já é comida: ocupa a panela mesmo sem água.
+            float volume = s.Water + (s.Portions + s.Canned * Mathf.Max(1, Cfg.PortionsPerCan.Value)) * Cfg.PortionVolume;
             float level = Mathf.Clamp01(volume / capacity);
             bool hasLiquid = volume > 0.005f;
             float y = Mathf.Lerp(Cfg.LiquidMinY.Value, Cfg.LiquidMaxY.Value, level);
@@ -603,6 +645,10 @@ namespace CozinhaExtra
             else if (s.Raw > 0)
             {
                 color = Color.Lerp(Items.WaterColor, Items.SoupColor(soup), 0.15f + s.Progress * 0.85f);
+            }
+            else if (s.Canned > 0)
+            {
+                color = Items.SoupColor(soup);
             }
             else
             {

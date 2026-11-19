@@ -1,4 +1,4 @@
-COZINHA EXTRA 1.4.3 - mod para Nomad Drive
+COZINHA EXTRA 1.5.0 - mod para Nomad Drive
 ==========================================
 
 Tudo usa a tecla K (o painel de ações do jogo mostra o que ela vai fazer).
@@ -8,9 +8,9 @@ Sopa na panela
 --------------
 1) Pôr água: segure uma garrafa, cantil ou balde com água e mire na panela
    (CookingPot), ou segure a panela com água na hotbar. Cada K põe 0,5 de água.
-2) Colocar o ingrediente: segure um tomate ou uma batata e mire na panela (K), ou
-   use o modo de colocação do jogo e coloque o legume dentro da panela.
-   Cabem 2 de cada vez (do mesmo tipo). Os legumes aparecem dentro da panela e
+2) Colocar o ingrediente: segure um tomate, uma batata ou um cogumelo e mire na
+   panela (K), ou use o modo de colocação do jogo e coloque-o dentro da panela.
+   Cabem 2 de cada vez (do mesmo tipo). Os ingredientes aparecem dentro da panela e
    vão encolhendo enquanto cozinham.
 3) Cozinhar: ponha a panela sobre uma boca acesa do fogão. Em 60 segundos o
    ingrediente vira sopa (a água muda de cor). Cada ingrediente usa 0,5 de água
@@ -19,21 +19,34 @@ Sopa na panela
    1 porção a cada 60 segundos. Tire do fogo (ou apague a boca) para guardar.
 5) Comer direto da panela: mire na panela com a mão vazia (ou segure a panela) e
    aperte K. Sopa de tomate: +15 fome, +15 sede. Sopa de batata: +18 fome, +12 sede.
+   Sopa de cogumelo: +16 fome, +12 sede - e não envenena (o cogumelo cru envenena).
 Olhando para a panela aparece embaixo da mira o que tem dentro (água, cozimento,
 porções e quanto falta para evaporar).
+
+Latas na panela (novo na 1.5.0)
+-------------------------------
+- Com uma lata do jogo na mão (sopa de tomate, feijão ou atum), mire na panela e
+  aperte K: "Despejar na panela". A lata some e o conteúdo vai para a panela.
+- Lata não precisa de água. Ponha no fogo aceso: em 20 segundos está quente.
+- Cada lata rende 2 porções, e quente rende mais que fria:
+  - Sopa de tomate em lata vira a sopa de tomate da panela (pode juntar com
+    tomates frescos na mesma panela; aí vale o tempo e a água da sopa).
+  - Feijão quente: +16 fome, +5 energia por porção. Vai em prato ou caneca.
+  - Atum quente: +16 fome, +5 energia por porção. Só vai em prato.
+- Uma receita por vez na panela: não dá para misturar feijão com cogumelo, por exemplo.
 
 Prato e caneca
 --------------
 - Achar pratos: eles aparecem pelo mapa, do lado de loot de cozinha (panela,
   caneca, frigideira...) e às vezes do lado de comida.
 - Pegar prato: mire num fogão com a mão vazia e aperte K.
-- Servir no prato: com o prato vazio na mão, mire na panela com sopa e aperte K.
-- Servir na caneca: com uma caneca (Mug) vazia na mão, mire na panela com sopa e
-  aperte K.
+- Servir no prato: com o prato vazio na mão, mire na panela com comida pronta e aperte K.
+- Servir na caneca: com uma caneca (Mug) vazia na mão, mire na panela com comida
+  pronta e aperte K. (Atum quente só vai no prato.)
 - Servir com a panela na mão: segurando a panela com sopa, mire num prato ou numa
   caneca vazia (na mesa, no chão, na prateleira) e aperte K.
-- O prato ou a caneca de sopa é comida normal do jogo (botão de comer, cabe na
-  hotbar) e mata a fome e a sede.
+- O prato ou a caneca de comida é comida normal do jogo (botão de comer, cabe na
+  hotbar) e mata a fome (e a sede, nas sopas).
 - Depois de comer, o prato vazio ou a caneca vazia volta para a sua mão.
 - Canecas de outros mods (ex.: as canecas coloridas do Nomad Items) mantêm a cor:
   a caneca de sopa fica da mesma cor e a mesma caneca volta depois de tomar.
@@ -45,13 +58,15 @@ Instalação (todos os jogadores precisam instalar)
    https://www.nexusmods.com/nomaddrive/mods/7
    Extraia na pasta do jogo (Steam > botão direito em Nomad Drive > Gerenciar >
    Procurar arquivos locais), de modo que o winhttp.dll fique ao lado de "Nomad Drive.exe".
-2. Extraia o CozinhaExtra-1.4.3.zip na mesma pasta. O resultado deve ser:
+2. Extraia o CozinhaExtra-1.5.0.zip na mesma pasta. O resultado deve ser:
    BepInEx\plugins\CozinhaExtra\CozinhaExtra.dll
 3. Abra o jogo pela Steam.
 
 Multiplayer
 -----------
-- Instale nos dois PCs, com a mesma versão do mod (versões diferentes não conversam entre si).
+- Instale nos dois PCs, com a mesma versão do mod. Com versões diferentes ninguém
+  é desconectado, mas quem está na versão antiga não vê os itens novos e não
+  consegue usar as receitas novas.
 - Quem decide tudo é o host: água, cozimento, evaporação, porções e os pratos e
   canecas criados. Eles são objetos de rede normais do jogo, então aparecem para
   todos que têm o mod.
@@ -63,7 +78,7 @@ O que é salvo
 -------------
 - O conteúdo das panelas é guardado pelo host em BepInEx\config\CozinhaExtra.panelas.txt
   e volta quando o mundo é carregado de novo.
-- Pratos (vazios ou com sopa) e canecas com sopa entram no save do jogo junto com
+- Pratos (vazios ou com comida) e canecas com comida entram no save do jogo junto com
   o resto do mundo.
 - Se você desinstalar o mod, o jogo só ignora esses itens ao carregar (o save
   continua abrindo; os pratos somem).
@@ -71,16 +86,16 @@ O que é salvo
 Configuração
 ------------
 Depois de abrir o jogo uma vez, edite BepInEx\config\seabra.nomaddrive.cozinhaextra.cfg
-(tecla, água, tempo de cozimento, evaporação, porções, fome/sede de cada sopa, pratos
-e chance de prato no mapa).
-As regras da panela valem as do host; fome e sede valem as de quem come.
+(tecla, água, tempo de cozimento, tempo para esquentar lata, evaporação, porções por
+ingrediente e por lata, fome/sede/energia de cada receita, pratos e chance de prato no mapa).
+As regras da panela valem as do host; fome, sede e energia valem as de quem come.
 
 Kit de teste
 ------------
 Para testar sem procurar itens: no mesmo arquivo, seção [Teste], mude KitDeTeste
 para true e reabra o jogo. Quem hospeda aperta F8 e aparecem na frente um fogão,
-uma panela, 2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato
-e uma mesa. Com um mod de canecas coloridas instalado (ex.: Nomad Items), vêm
+uma panela, 2 tomates, 2 batatas, 2 cogumelos, latas de sopa de tomate, feijão e
+atum, 2 garrafas de água cheias, uma caneca, um prato e uma mesa. Com um mod de canecas coloridas instalado (ex.: Nomad Items), vêm
 também 2 canecas coloridas.
 Vem desligado. Desligue de novo depois de testar.
 
