@@ -1,0 +1,138 @@
+=====================================================================
+NOME DO MOD (Mod name)
+=====================================================================
+Extra Cooking - Soups, Plates and Mugs
+
+=====================================================================
+RESUMO (Brief overview, máx. ~350 caracteres)
+=====================================================================
+Cook tomato and potato soup in the cooking pot: add water, a tomato or potato, and put it on a lit burner. Eat it from the pot or serve it on a plate or in a mug. Soup fills hunger and thirst, and boils away if left on the fire. English and Portuguese (Brazil). Co-op ready (install on every PC).
+
+=====================================================================
+CATEGORIA / TAGS
+=====================================================================
+Categoria: Gameplay
+Requisito (Requirements > Nexus mods): BepInExPack_NomadDrive
+  https://www.nexusmods.com/nomaddrive/mods/7
+Versão: 1.4.2
+Idiomas: English, Português (Brasil) - segue o idioma das opções do jogo
+
+=====================================================================
+DESCRIÇÃO (cole no campo Description, que aceita BBCode)
+=====================================================================
+[size=5][b]Extra Cooking - Soups, Plates and Mugs[/b][/size]
+
+The cooking pot finally gets a use for water. Make soup from the tomatoes and potatoes you find or grow, eat it from the pot, or serve it on a plate or in a mug.
+
+[size=4][b]How it works[/b][/size] (everything uses the [b]K[/b] key; the game's action list shows what K will do)
+[list=1]
+[*][b]Add water:[/b] hold a bottle, canteen or bucket with water and aim at the [b]Cooking Pot[/b] (or hold the pot with water in your hotbar). Each press adds 0.5 water.
+[*][b]Add the ingredient:[/b] hold a [b]Tomato[/b] or a [b]Potato[/b] and aim at the pot (K), or use the game's placement mode and place it in the pot. Up to 2 at a time, same kind. You can see them in the pot, shrinking as they cook.
+[*][b]Cook:[/b] put the pot on a lit stove burner. After 60 seconds the water turns into soup. Each ingredient uses 0.5 water and makes 2 portions.
+[*][b]Watch the fire:[/b] finished soup left on a lit burner boils away, losing 1 portion every 60 seconds. Take it off the heat to keep it.
+[*][b]Eat from the pot:[/b] aim at it with an empty hand (or hold it) and press K.
+[/list]
+Looking at a pot shows what is inside under the crosshair (water, cooking progress, portions, time until a portion boils away).
+
+[size=4][b]Plates and mugs[/b][/size]
+[list]
+[*][b]Find plates:[/b] they show up around the map next to kitchen loot (pots, mugs, pans...) and sometimes next to food.
+[*][b]Take a plate:[/b] aim at a stove with an empty hand and press K.
+[*][b]Serve on a plate:[/b] hold the empty plate, aim at a pot with soup and press K.
+[*][b]Serve in a mug:[/b] hold an empty [b]Mug[/b], aim at a pot with soup and press K.
+[*][b]Serve from the pot:[/b] holding the pot with soup, aim at an empty plate or mug (on a table, the floor, a shelf) and press [b]K[/b].
+[*]Plates and mugs of soup are normal food items: eat with the use button, they fit in the hotbar and fill both hunger and thirst.
+[*]After eating, the empty plate or the empty mug goes back to your hand.
+[*]Empty plates stack: place a plate on top of another with the placement mode.
+[/list]
+
+[size=4][b]Food values[/b][/size] (per portion, configurable)
+[list]
+[*]Tomato soup: +15 nutrition, +15 hydration
+[*]Potato soup: +18 nutrition, +12 hydration
+[/list]
+
+[size=4][b]Languages[/b][/size]
+English and Portuguese (Brazil). The mod follows the language picked in the game's options, even if you change it mid-game. Any other game language shows English.
+
+[size=4][b]Multiplayer[/b][/size]
+[list]
+[*]Install on [b]every[/b] player's PC (same version; different versions do not talk to each other).
+[*]The host runs everything: water, cooking, boiling away, portions and the plates and mugs it creates. They are regular networked objects, so everyone with the mod sees them.
+[*]Players who join with the mod see the water, vegetables and soup in the host's pots right away.
+[*]The mod only talks to players who also have it. If you join a host [b]without[/b] the mod and press K on a pot, the host's game will disconnect you.
+[/list]
+
+[size=4][b]What is saved[/b][/size]
+[list]
+[*]Pot contents are saved by the host and come back when the world is loaded again.
+[*]Plates (empty or with soup) and soup mugs are saved with the rest of the world.
+[*]If you uninstall the mod, the game simply skips those items when loading; your save still opens.
+[/list]
+
+[size=4][b]Installation[/b][/size]
+[list=1]
+[*]Install [url=https://www.nexusmods.com/nomaddrive/mods/7]BepInExPack_NomadDrive[/url].
+[*]Extract this zip into the game folder (Steam > right-click Nomad Drive > Manage > Browse local files), so you end up with [i]BepInEx\plugins\CozinhaExtra\CozinhaExtra.dll[/i].
+[*]Start the game.
+[/list]
+
+[size=4][b]Configuration[/b][/size]
+After the first launch, edit [i]BepInEx\config\seabra.nomaddrive.cozinhaextra.cfg[/i]: key, water per press, pot capacity, water per ingredient, max ingredients, cooking time, boil-away time (0 = off), portions, nutrition/hydration of each soup, plates from stove on/off, plates around the map and their chance. Pot rules use the host's values; food values use the eater's.
+There is also a [b]test kit[/b] (off by default): set [i]KitDeTeste = true[/i] in the [i][Teste][/i] section and the host can press F8 to spawn a stove, a pot, tomatoes, potatoes, full water bottles, a mug, a plate and a table.
+
+[size=4][b]Uninstall[/b][/size]
+Delete the [i]BepInEx\plugins\CozinhaExtra[/i] folder. Your saves are not affected.
+
+[size=4][b]Português[/b][/size]
+Faça sopa de tomate e de batata: ponha água na panela, coloque um tomate ou uma batata e leve ao fogo aceso. Coma direto da panela ou sirva no prato (achado pelo mapa ou pego no fogão) ou numa caneca vazia. A sopa mata a fome e a sede, e evapora se ficar no fogo depois de pronta. Tudo com a tecla [b]K[/b]. O mod aparece em português quando o jogo está em português. Funciona no co-op: instale em todos os PCs. Requer o BepInExPack_NomadDrive.
+
+=====================================================================
+PERMISSÕES SUGERIDAS (Permissions and credits)
+=====================================================================
+- Upload em outros sites: pedir permissão
+- Modificar e reaproveitar: com crédito
+- Uso em mods pagos: não
+Créditos: Nomad Drive (c) Indie Devil. Requer BepInEx (LGPL-2.1) via BepInExPack_NomadDrive by papiophidian.
+
+=====================================================================
+CHANGELOG (aba Logs, se quiser)
+=====================================================================
+1.4.2
+- Corrigido: caneca de sopa não encaixava em mesas e prateleiras (colisão deslocada)
+- Caneca de sopa é segurada com a mesma pose de mão da caneca do jogo
+1.4.1
+- Corrigido: prato vazio tinha uma colisão invisível grande (atrapalhava segurar, colocar e empilhar)
+1.4.0
+- Outros jogadores veem a panela cozinhando sem precisar apertar K antes
+- Pratos e canecas de sopa acompanham o veículo em movimento
+- Pratos vazios empilham
+- Pratos e canecas de sopa seguram e encaixam direito (tamanho e pose corretos)
+- Corrigido: sopa da panela ficava destacada depois de usar o modo de colocação
+- Kit de teste traz uma mesa
+1.3.1
+- Servir segurando a panela fica só no K (a dica na tela mostra K)
+1.3.0
+- Segurando a panela, K num prato/caneca vazio serve a sopa
+- Tomate e batata podem ser colocados na panela pelo modo de colocação do jogo
+- Os legumes aparecem dentro da panela e encolhem enquanto cozinham
+1.2.0
+- Pratos aparecem pelo mapa junto do loot de cozinha e de comida (chance configurável)
+- Pratos e canecas de sopa agora entram no save do mundo
+- Kit de teste também traz um prato
+1.1.0
+- Servir sopa numa caneca vazia (a caneca volta depois de tomar)
+- Sopa pronta no fogo aceso evapora: perde 1 porção a cada 60 s (configurável)
+- Sopa hidrata mais: tomate +15 sede, batata +12 sede
+- Textos em português (Brasil) ou inglês conforme o idioma do jogo
+- Kit de teste (F8, desligado por padrão)
+1.0.0
+- Primeira versão: sopa de tomate e de batata na panela, pratos
+
+=====================================================================
+IMAGENS (tire no jogo, 16:9)
+=====================================================================
+1. Panela no fogão aceso com sopa vermelha e a linha de status embaixo da mira
+2. Garrafa na mão mirando a panela, com "Pour water into the pot [K]" no painel da direita
+3. Prato de sopa de tomate na mão (e o ícone na hotbar)
+4. Caneca de sopa de batata na mão

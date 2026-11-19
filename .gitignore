@@ -1,0 +1,24 @@
+# dotnet
+bin/
+obj/
+*.user
+.vs/
+.idea/
+.vscode/
+
+# python
+.venv/
+__pycache__/
+
+# código do jogo descompilado e mods de terceiros (consulta local; não redistribuir)
+.game-sources/
+.third-party/
+
+# claude
+.claude/settings.local.json
+.claude/worktrees/
+
+# sistema
+Thumbs.db
+desktop.ini
+*.DS_Store

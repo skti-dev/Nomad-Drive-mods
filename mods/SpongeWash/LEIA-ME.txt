@@ -1,0 +1,37 @@
+SPONGE WASH 1.2.0 - mod para Nomad Drive
+========================================
+
+O que faz
+---------
+1) Lavar a esponja com garrafa: aperte K segurando a esponja ou mirando nela,
+   com uma garrafa, cantil ou balde com água na mão ou na hotbar. O painel de
+   ações do jogo mostra "Lavar esponja [K]" sempre que der para lavar.
+   Gasta 1 unidade de água para ir de 0% a 100%. Se tiver pouca água, lava só uma parte.
+2) Balde melhorado: com a esponja encaixada no balde com água, a limpeza fica
+   3x mais rápida e gasta metade da água. Vale para quem hospeda.
+
+Instalação (os dois jogadores precisam instalar)
+------------------------------------------------
+1. Baixe e instale o BepInExPack_NomadDrive (precisa de login no Nexus):
+   https://www.nexusmods.com/nomaddrive/mods/7
+   Extraia na pasta do jogo (Steam > botão direito em Nomad Drive > Gerenciar >
+   Procurar arquivos locais), de modo que o winhttp.dll fique ao lado de "Nomad Drive.exe".
+2. Extraia o SpongeWash-1.2.0.zip na mesma pasta. O resultado deve ser:
+   BepInEx\plugins\SpongeWash\SpongeWash.dll
+3. Abra o jogo pela Steam.
+
+Multiplayer
+-----------
+- Instale nos dois PCs, com a mesma versão do mod.
+- Quem lava é o host, usando só valores que o jogo já sincroniza
+  (condição da esponja e água das garrafas).
+- Se só quem entra tiver o mod e apertar K, o host sem o mod desconecta essa pessoa.
+
+Configuração
+------------
+Depois de abrir o jogo uma vez, edite BepInEx\config\SpongeWash.cfg
+(tecla, água por limpeza e multiplicadores do balde).
+
+Desinstalar
+-----------
+Apague a pasta BepInEx\plugins\SpongeWash. Os saves não são afetados.

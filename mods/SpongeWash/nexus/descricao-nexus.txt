@@ -1,0 +1,75 @@
+=====================================================================
+NOME DO MOD (Mod name)
+=====================================================================
+Sponge Wash
+
+=====================================================================
+RESUMO (Brief overview, máx. ~350 caracteres)
+=====================================================================
+Wash your dirty Cleaning Sponge with water from a bottle, canteen or bucket in your hotbar: press K with the sponge in hand or while aiming at it. Also makes the bucket clean sponges 3x faster with half the water. Works in co-op (install on every PC).
+
+=====================================================================
+CATEGORIA / TAGS
+=====================================================================
+Categoria: Gameplay (ou Miscellaneous)
+Requisito (Requirements > Nexus mods): BepInExPack_NomadDrive
+  https://www.nexusmods.com/nomaddrive/mods/7
+
+=====================================================================
+DESCRIÇÃO (cole no campo Description, que aceita BBCode)
+=====================================================================
+[size=5][b]Sponge Wash[/b][/size]
+
+Tired of throwing away black, worn-out sponges? Rinse them with the water you are already carrying.
+
+[size=4][b]Features[/b][/size]
+[list]
+[*][b]Wash with a bottle:[/b] hold the [b]Cleaning Sponge[/b] (or hold your water bottle and aim at a sponge on the ground) and press [b]K[/b]. The sponge is restored using water from bottles, canteens or buckets in your hand or hotbar (backpack slots included).
+[*][b]Native prompt:[/b] a "Wash sponge [K]" hint shows up in the game's own action list whenever a wash is possible.
+[*][b]Fair cost:[/b] a full wash (0% to 100%) costs 1 unit of water, the same ratio as the vanilla bucket. Not enough water? It washes partially.
+[*][b]Better bucket:[/b] snapping a sponge into a bucket of water cleans it 3x faster and uses half the water (host-side, configurable).
+[/list]
+
+[size=4][b]Multiplayer[/b][/size]
+[list]
+[*]Install on [b]every[/b] player's PC (same version).
+[*]The host does all the washing. The mod only changes values the game already syncs (sponge condition and liquid amounts), so there are no new networked objects.
+[*]A player with the mod who joins a host [b]without[/b] it and presses K will be disconnected by the game's networking. Everyone should have it.
+[/list]
+
+[size=4][b]Installation[/b][/size]
+[list=1]
+[*]Install [url=https://www.nexusmods.com/nomaddrive/mods/7]BepInExPack_NomadDrive[/url].
+[*]Extract this zip into the game folder (Steam > right-click Nomad Drive > Manage > Browse local files), so you end up with [i]BepInEx\plugins\SpongeWash\SpongeWash.dll[/i].
+[*]Start the game.
+[/list]
+
+[size=4][b]Configuration[/b][/size]
+After the first launch, edit [i]BepInEx\config\SpongeWash.cfg[/i]:
+[code]
+TeclaLavar = K                      # wash key (Unity Input System key name)
+AguaPorLimpezaCompleta = 1          # water used for a 0% -> 100% wash
+BaldeMultiplicadorVelocidade = 3    # bucket cleaning speed (1 = vanilla), host only
+BaldeMultiplicadorConsumoAgua = 0.5 # bucket water usage (1 = vanilla), host only
+[/code]
+
+[size=4][b]Uninstall[/b][/size]
+Delete the [i]BepInEx\plugins\SpongeWash[/i] folder. Your saves are not affected.
+
+[size=4][b]Português[/b][/size]
+Lave a esponja suja com a água de garrafas, cantis ou baldes da hotbar: aperte [b]K[/b] segurando a esponja ou mirando nela. O balde também limpa 3x mais rápido gastando metade da água. Funciona no co-op: instale em todos os PCs. Requer o BepInExPack_NomadDrive.
+
+=====================================================================
+PERMISSÕES SUGERIDAS (Permissions and credits)
+=====================================================================
+- Upload em outros sites: pedir permissão
+- Modificar e reaproveitar: com crédito
+- Uso em mods pagos: não
+Créditos: Nomad Drive (c) Indie Devil. Requer BepInEx (LGPL-2.1) via BepInExPack_NomadDrive by papiophidian.
+
+=====================================================================
+IMAGENS (tire no jogo, 16:9)
+=====================================================================
+1. Garrafa na mão mirando numa esponja preta, com o hint "Wash sponge [K]" no painel da direita
+2. Logo depois de apertar K: esponja limpa + mensagem "Sponge washed"
+3. Esponja encaixada no balde (opcional)
