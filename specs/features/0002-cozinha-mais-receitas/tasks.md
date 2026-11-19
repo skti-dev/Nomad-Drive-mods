@@ -58,8 +58,8 @@
 ## Validação final (Definition of Done)
 - [x] `dotnet build mods/CozinhaExtra -c Release` sem erros nem avisos novos (copia para o jogo)
 - [x] RefCheck sem faltas
-- [ ] Teste no jogo, solo: roteiro "Como testar no jogo" do plano, passos 1–7 — **Augusto**
-- [ ] Teste em co-op (host + cliente; cliente entrando no meio) — **pendente para o Augusto**
-- [ ] Salvar, sair e carregar: itens e panelas voltam certos; save abre sem o mod — **Augusto**
-- [ ] `BepInEx\LogOutput.log` sem erros do mod — **Augusto**
-- [ ] Merge `--no-ff` em `staging` só depois do "aprovado" do Augusto
+- [x] Teste no jogo, solo: roteiro "Como testar no jogo" do plano, passos 1–7 — **Augusto** (aprovado em 2026-11-19)
+- [x] Teste em co-op (host + cliente; cliente entrando no meio) — **Augusto** (aprovado em 2026-11-19)
+- [x] Salvar, sair e carregar: itens e panelas voltam certos; save abre sem o mod — **Augusto** (aprovado em 2026-11-19)
+- [x] `BepInEx\LogOutput.log` sem erros do mod — **Augusto** (aprovado em 2026-11-19)
+- [x] Merge `--no-ff` em `staging` só depois do "aprovado" do Augusto
