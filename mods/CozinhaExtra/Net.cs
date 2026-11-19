@@ -2,12 +2,17 @@ using Mirror;
 
 namespace CozinhaExtra
 {
-    // Tipos de sopa. O número viaja na rede e vai para o arquivo de panelas, então não reordene.
+    // Receitas da panela (ver Recipes). O número viaja na rede e vai para o arquivo de panelas,
+    // então só acrescente no fim. 6 está reservado para a geleia (fase 2). CePlate.Kind = receita (+10
+    // se caneca), então cabem receitas até 9.
     public enum SoupType : byte
     {
         None = 0,
         Tomato = 1,
-        Potato = 2
+        Potato = 2,
+        Mushroom = 3,
+        Beans = 4,
+        Tuna = 5
     }
 
     // O que o jogador pediu ao apertar a tecla.
@@ -38,7 +43,9 @@ namespace CozinhaExtra
         HandBusy = 10,
         TooFar = 11,
         MugNotEmpty = 12,
-        Evaporated = 13
+        Evaporated = 13,
+        CanPoured = 14,     // 1.5.0
+        PlateOnly = 15      // 1.5.0: esta receita não vai em caneca
     }
 
     // Cliente -> host.
@@ -59,6 +66,7 @@ namespace CozinhaExtra
         public byte Portions;
         public float Progress;
         public float Evap;      // segundos acumulados no fogo desde a última porção evaporada
+        public byte Canned;     // 1.5.0: latas despejadas ainda esquentando (sempre no fim da mensagem)
     }
 
     // Host -> quem pediu: "pegue este item" (prato recém-criado).
@@ -90,7 +98,9 @@ namespace CozinhaExtra
         // Versão das mensagens do mod, enviada no Hello (CeRequest.Target). 1.4.2 manda 0.
         // 2 = entende CeMugSkin (1.4.3). O host só manda mensagem nova a quem disse que entende,
         // porque o Mirror desconecta quem recebe mensagem desconhecida.
-        public const uint Protocol = 2;
+        // 3 = 1.5.0 (receitas novas; entende CanPoured/PlateOnly).
+        public const uint Protocol = 3;
+        public const uint ProtocolRecipes = 3;
         public const uint ProtocolMugSkin = 2;
 
         // O weaver do Mirror não roda neste DLL, então os serializadores são registrados à mão.
@@ -108,6 +118,7 @@ namespace CozinhaExtra
                 w.WriteByte(m.Portions);
                 w.WriteFloat(m.Progress);
                 w.WriteFloat(m.Evap);
+                w.WriteByte(m.Canned);
             };
             Reader<CePotState>.read = r => new CePotState
             {
@@ -117,7 +128,9 @@ namespace CozinhaExtra
                 Raw = r.ReadByte(),
                 Portions = r.ReadByte(),
                 Progress = r.ReadFloat(),
-                Evap = r.ReadFloat()
+                Evap = r.ReadFloat(),
+                // Host 1.4.x não manda este byte: ler além do fim daria exceção e o Mirror desconectaria.
+                Canned = r.Remaining > 0 ? r.ReadByte() : (byte)0
             };
 
             Writer<CeEquip>.write = (w, m) => w.WriteUInt(m.Item);

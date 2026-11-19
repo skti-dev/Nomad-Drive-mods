@@ -17,7 +17,7 @@ using Object = UnityEngine.Object;
 
 namespace CozinhaExtra
 {
-    // Marca os itens do mod. Kind 0 = prato vazio; 1/2 = prato com sopa; 11/12 = caneca com sopa.
+    // Marca os itens do mod. Kind 0 = prato vazio; 1..9 = prato da receita (SoupType); 11..19 = caneca da receita.
     public sealed class CePlate : MonoBehaviour
     {
         public const byte MugOffset = 10;
@@ -67,11 +67,9 @@ namespace CozinhaExtra
     internal static partial class Items
     {
         // Ids fixos: precisam ser iguais em todos os PCs e não colidir com os do jogo.
+        // Os pratos/canecas de cada receita ficam na tabela (Recipes): 0xCE5A0002-0A em uso,
+        // 0xCE5A000B-0F reservados para a geleia (fase 2).
         public const uint EmptyPlateAssetId = 0xCE5A0001;
-        public const uint TomatoPlateAssetId = 0xCE5A0002;
-        public const uint PotatoPlateAssetId = 0xCE5A0003;
-        public const uint TomatoMugAssetId = 0xCE5A0004;
-        public const uint PotatoMugAssetId = 0xCE5A0005;
 
         public const string MugKey = "Mug";
         // Quadro do jogo: item simples, chato e deitado, com superfície de encaixe em cima (empilhar pratos).
@@ -166,34 +164,32 @@ namespace CozinhaExtra
         private static GameObject _holder;
         private static GameObject _plateBase;
         private static GameObject _soupBase;
-        private static GameObject _tomatoBase;
-        private static GameObject _potatoBase;
+        // Prefab do jogo de cada ingrediente fresco (só para o visual dentro da panela).
+        private static readonly Dictionary<SoupType, GameObject> IngredientBases = new Dictionary<SoupType, GameObject>();
         private static readonly Dictionary<SoupType, float> IngredientRadii = new Dictionary<SoupType, float>();
+        private static readonly Dictionary<SoupType, GameObject> Plates = new Dictionary<SoupType, GameObject>();
+        private static readonly Dictionary<SoupType, GameObject> Mugs = new Dictionary<SoupType, GameObject>();
         private static int _pendingLoads;
         private static bool _loadStarted;
         private static bool _failed;
 
         public static GameObject EmptyPlate { get; private set; }
-        public static GameObject TomatoPlate { get; private set; }
-        public static GameObject PotatoPlate { get; private set; }
-        public static GameObject TomatoMug { get; private set; }
-        public static GameObject PotatoMug { get; private set; }
 
         // Caneca do jogo (a que volta para a mão depois de tomar a sopa).
         public static GameObject MugPrefab { get; private set; }
 
         public static bool Ready { get; private set; }
 
-        public static bool MugsReady => Ready && TomatoMug != null && PotatoMug != null && MugPrefab != null;
+        // Dá para servir em caneca (alguma receita tem caneca montada). Receita sem caneca: FilledMug == null.
+        public static bool MugsReady => Ready && MugPrefab != null && Mugs.Count > 0;
 
         // Material de referência (HDRP Lit) para o líquido da panela.
         public static Material LitTemplate { get; private set; }
 
-        public static readonly Color TomatoColor = new Color(0.72f, 0.14f, 0.07f);
-        public static readonly Color PotatoColor = new Color(0.86f, 0.76f, 0.52f);
+        private static readonly Color FallbackColor = new Color(0.72f, 0.14f, 0.07f);
         public static readonly Color WaterColor = new Color(0.42f, 0.55f, 0.62f);
 
-        public static Color SoupColor(SoupType soup) => soup == SoupType.Potato ? PotatoColor : TomatoColor;
+        public static Color SoupColor(SoupType soup) => Recipes.Get(soup)?.Color ?? FallbackColor;
 
         // Usado pelo gancho do tradutor do jogo: devolve o nome no idioma escolhido no jogo.
         public static bool TryTranslate(string english, out string text)
@@ -207,14 +203,38 @@ namespace CozinhaExtra
             return true;
         }
 
-        // Cópia só visual (sem rede, sem física) do tomate/batata do jogo, para mostrar dentro da panela.
+        // Malha visível de um ingrediente do jogo: o filho "Model" (tomate, batata) ou, se não houver
+        // (o cogumelo usa "Mushroom-01"), o primeiro MeshFilter com MeshRenderer.
+        private static bool TryIngredientMesh(SoupType soup, out Transform model, out MeshFilter mf, out MeshRenderer mr)
+        {
+            model = null;
+            mf = null;
+            mr = null;
+            if (!IngredientBases.TryGetValue(soup, out GameObject prefab) || prefab == null)
+            {
+                return false;
+            }
+            model = prefab.transform.Find("Model");
+            if (model == null)
+            {
+                foreach (MeshFilter candidate in prefab.GetComponentsInChildren<MeshFilter>(true))
+                {
+                    if (candidate.sharedMesh != null && candidate.GetComponent<MeshRenderer>() != null)
+                    {
+                        model = candidate.transform;
+                        break;
+                    }
+                }
+            }
+            mf = model != null ? model.GetComponent<MeshFilter>() : null;
+            mr = model != null ? model.GetComponent<MeshRenderer>() : null;
+            return mf != null && mr != null && mf.sharedMesh != null;
+        }
+
+        // Cópia só visual (sem rede, sem física) do ingrediente do jogo, para mostrar dentro da panela.
         public static GameObject MakeIngredientVisual(SoupType soup, Transform parent)
         {
-            GameObject prefab = soup == SoupType.Potato ? _potatoBase : _tomatoBase;
-            Transform model = prefab != null ? prefab.transform.Find("Model") : null;
-            MeshFilter mf = model != null ? model.GetComponent<MeshFilter>() : null;
-            MeshRenderer mr = model != null ? model.GetComponent<MeshRenderer>() : null;
-            if (mf == null || mr == null || mf.sharedMesh == null)
+            if (!TryIngredientMesh(soup, out Transform model, out MeshFilter mf, out MeshRenderer mr))
             {
                 return null;
             }
@@ -241,11 +261,8 @@ namespace CozinhaExtra
             {
                 return r;
             }
-            GameObject prefab = soup == SoupType.Potato ? _potatoBase : _tomatoBase;
-            Transform model = prefab != null ? prefab.transform.Find("Model") : null;
-            MeshFilter mf = model != null ? model.GetComponent<MeshFilter>() : null;
             r = 0.05f;
-            if (mf != null && mf.sharedMesh != null)
+            if (TryIngredientMesh(soup, out Transform model, out MeshFilter mf, out _))
             {
                 Vector3 e = Vector3.Scale(mf.sharedMesh.bounds.extents, model.localScale);
                 r = Mathf.Max(e.x, Mathf.Max(e.y, e.z));
@@ -254,9 +271,10 @@ namespace CozinhaExtra
             return r;
         }
 
-        public static GameObject FilledPlate(SoupType soup) => soup == SoupType.Potato ? PotatoPlate : TomatoPlate;
+        public static GameObject FilledPlate(SoupType soup) => Plates.TryGetValue(soup, out GameObject t) ? t : null;
 
-        public static GameObject FilledMug(SoupType soup) => soup == SoupType.Potato ? PotatoMug : TomatoMug;
+        // null = esta receita não vai em caneca (atum) ou a caneca dela não pôde ser montada.
+        public static GameObject FilledMug(SoupType soup) => Mugs.TryGetValue(soup, out GameObject t) ? t : null;
 
         public static Food FilledPlateFood(SoupType soup)
         {
@@ -284,12 +302,15 @@ namespace CozinhaExtra
         private static void StartLoad()
         {
             _loadStarted = true;
-            _pendingLoads = 5;
+            _pendingLoads = 3 + Recipes.FreshIds.Length;
             Load(PlateBaseKey, go => _plateBase = go);
             Load(SoupBaseKey, go => _soupBase = go);
             Load(MugKey, go => MugPrefab = go);
-            Load("Tomato", go => _tomatoBase = go);
-            Load("Potato", go => _potatoBase = go);
+            foreach (string id in Recipes.FreshIds)
+            {
+                Recipes.TryIngredientId(id, out SoupType soup, out _);
+                Load(id, go => IngredientBases[soup] = go);
+            }
         }
 
         private static void Load(string key, Action<GameObject> store)
@@ -340,9 +361,6 @@ namespace CozinhaExtra
                 LitTemplate = baseMat;
 
                 Material ceramic = MakeMaterial(baseMat, new Color(0.93f, 0.92f, 0.88f), 0.75f, "CozinhaExtra_Ceramic");
-                Material tomato = MakeMaterial(baseMat, TomatoColor, 0.55f, "CozinhaExtra_TomatoSoup");
-                Material potato = MakeMaterial(baseMat, PotatoColor, 0.45f, "CozinhaExtra_PotatoSoup");
-
                 Mesh collider = MeshFactory.Cylinder(MeshFactory.PlateRadius, MeshFactory.PlateHeight, 0f);
                 Mesh colliderCentered = MeshFactory.Cylinder(MeshFactory.PlateRadius, MeshFactory.PlateHeight, -MeshFactory.PlateHeight / 2f);
 
@@ -356,25 +374,25 @@ namespace CozinhaExtra
                     IconFactory.Plate(Color.clear), MeshFactory.PlateHeight / 2f, plateConfig, PlateFootprint);
                 ConfigureEmptyPlate(EmptyPlate, ceramic);
 
-                TomatoPlate = BuildTemplate(_soupBase, TomatoPlateAssetId, (byte)SoupType.Tomato, "CozinhaExtra_TomatoSoupPlate", "CE_TomatoSoupPlate",
-                    "Plate of tomato soup", "Prato de sopa de tomate",
-                    MeshFactory.Plate(-MeshFactory.PlateHeight / 2f, true), new[] { ceramic, tomato }, colliderCentered,
-                    IconFactory.Plate(TomatoColor), MeshFactory.PlateHeight / 2f, plateConfig, PlateFootprint);
-
-                PotatoPlate = BuildTemplate(_soupBase, PotatoPlateAssetId, (byte)SoupType.Potato, "CozinhaExtra_PotatoSoupPlate", "CE_PotatoSoupPlate",
-                    "Plate of potato soup", "Prato de sopa de batata",
-                    MeshFactory.Plate(-MeshFactory.PlateHeight / 2f, true), new[] { ceramic, potato }, colliderCentered,
-                    IconFactory.Plate(PotatoColor), MeshFactory.PlateHeight / 2f, plateConfig, PlateFootprint);
-
-                SetupSoupFood(TomatoPlate, SoupType.Tomato);
-                SetupSoupFood(PotatoPlate, SoupType.Potato);
+                // Um prato (e uma caneca, se a receita levar) por receita; materiais criados uma vez cada.
+                Dictionary<SoupType, Material> soupMaterials = new Dictionary<SoupType, Material>();
+                foreach (Recipe recipe in Recipes.All)
+                {
+                    Material soupMat = MakeMaterial(baseMat, recipe.Color, Smoothness(recipe.Type), "CozinhaExtra_" + recipe.Type + "Soup");
+                    soupMaterials[recipe.Type] = soupMat;
+                    GameObject plate = BuildTemplate(_soupBase, recipe.PlateAssetId, (byte)recipe.Type, "CozinhaExtra_" + recipe.PlateKey, "CE_" + recipe.PlateKey,
+                        recipe.PlateEn, recipe.PlatePt,
+                        MeshFactory.Plate(-MeshFactory.PlateHeight / 2f, true), new[] { ceramic, soupMat }, colliderCentered,
+                        IconFactory.Plate(recipe.Color), MeshFactory.PlateHeight / 2f, plateConfig, PlateFootprint);
+                    SetupSoupFood(plate, recipe.Type);
+                    Plates[recipe.Type] = plate;
+                }
 
                 Ready = true;
-                BuildMugs(tomato, potato);
+                BuildMugs(soupMaterials);
                 EnsureRegistered();
-                Plugin.Log.LogInfo(MugsReady
-                    ? "Pratos e canecas prontos (prato vazio, pratos e canecas de sopa de tomate e de batata)."
-                    : "Pratos prontos (vazio, sopa de tomate, sopa de batata). Canecas de sopa desativadas.");
+                Plugin.Log.LogInfo($"Pratos prontos: {string.Join(", ", NamesOf(Plates))}. " +
+                    (MugsReady ? $"Canecas: {string.Join(", ", NamesOf(Mugs))}." : "Canecas de sopa desativadas."));
             }
             catch (Exception e)
             {
@@ -384,9 +402,22 @@ namespace CozinhaExtra
             }
         }
 
+        // Brilho do líquido: tomate e batata como na 1.4.x; as outras no meio-termo.
+        private static float Smoothness(SoupType soup) => soup == SoupType.Tomato ? 0.55f : soup == SoupType.Potato ? 0.45f : 0.5f;
+
+        private static List<string> NamesOf(Dictionary<SoupType, GameObject> templates)
+        {
+            List<string> names = new List<string>();
+            foreach (GameObject t in templates.Values)
+            {
+                names.Add(t.name.Replace("CozinhaExtra_", ""));
+            }
+            return names;
+        }
+
         // Caneca de sopa = lata de sopa (comida) com a malha e os materiais da caneca do jogo e a
         // malha de líquido dela pintada com a cor da sopa. Se algo faltar, só as canecas ficam de fora.
-        private static void BuildMugs(Material tomato, Material potato)
+        private static void BuildMugs(Dictionary<SoupType, Material> soupMaterials)
         {
             try
             {
@@ -408,25 +439,30 @@ namespace CozinhaExtra
                 Sprite icon = mugItem != null && mugItem.heldItemConfig != null ? mugItem.heldItemConfig.inventoryIcon : null;
                 Mesh collider = MeshFactory.Cylinder(MugRadius, MugHeight, -MugHeight / 2f);
 
-                TomatoMug = BuildMug(SoupType.Tomato, TomatoMugAssetId, "Mug of tomato soup", "Caneca de sopa de tomate",
-                    mugModel, mugFilter, mugRenderer, liquid, liquidFilter, tomato, collider, icon != null ? icon : IconFactory.Plate(TomatoColor));
-                PotatoMug = BuildMug(SoupType.Potato, PotatoMugAssetId, "Mug of potato soup", "Caneca de sopa de batata",
-                    mugModel, mugFilter, mugRenderer, liquid, liquidFilter, potato, collider, icon != null ? icon : IconFactory.Plate(PotatoColor));
+                foreach (Recipe recipe in Recipes.All)
+                {
+                    if (!recipe.HasMug)
+                    {
+                        continue;
+                    }
+                    Mugs[recipe.Type] = BuildMug(recipe, mugModel, mugFilter, mugRenderer, liquid, liquidFilter,
+                        soupMaterials[recipe.Type], collider, icon != null ? icon : IconFactory.Plate(recipe.Color));
+                }
             }
             catch (Exception e)
             {
-                TomatoMug = null;
-                PotatoMug = null;
+                Mugs.Clear();
                 Plugin.Log.LogError($"Canecas de sopa desativadas por erro: {e}");
             }
         }
 
-        private static GameObject BuildMug(SoupType soup, uint assetId, string english, string portuguese,
+        private static GameObject BuildMug(Recipe recipe,
             Transform mugModel, MeshFilter mugFilter, MeshRenderer mugRenderer, Transform liquid, MeshFilter liquidFilter,
             Material soupMaterial, Mesh collider, Sprite icon)
         {
-            GameObject t = BuildTemplate(_soupBase, assetId, (byte)(CePlate.MugOffset + (byte)soup),
-                "CozinhaExtra_" + soup + "SoupMug", "CE_" + soup + "SoupMug", english, portuguese,
+            SoupType soup = recipe.Type;
+            GameObject t = BuildTemplate(_soupBase, recipe.MugAssetId, (byte)(CePlate.MugOffset + (byte)soup),
+                "CozinhaExtra_" + recipe.MugKey, "CE_" + recipe.MugKey, recipe.MugEn, recipe.MugPt,
                 mugFilter.sharedMesh, mugRenderer.sharedMaterials, collider, icon, MugHeight / 2f,
                 MugPrefab.GetComponent<HeldItem>().heldItemConfig, MugFootprint);
 
@@ -655,27 +691,38 @@ namespace CozinhaExtra
             food.currentPlayerStatCollection = Stats(soup);
         }
 
-        // Fome e sede da sopa. O dicionário do jogo se reconstrói a partir das listas keys/values
-        // quando o Unity o recarrega, então as duas formas ficam preenchidas.
+        // Fome, sede e energia da receita (só as que dão algo). O dicionário do jogo se reconstrói a
+        // partir das listas keys/values quando o Unity o recarrega, então as duas formas ficam preenchidas.
         private static SerializableDictionary<PlayerStatType, float> Stats(SoupType soup)
         {
-            SerializableDictionary<PlayerStatType, float> d = new SerializableDictionary<PlayerStatType, float>
-            {
-                [PlayerStatType.Nutrition] = Cfg.Nutrition(soup),
-                [PlayerStatType.Hydration] = Cfg.Hydration(soup)
-            };
+            SerializableDictionary<PlayerStatType, float> d = new SerializableDictionary<PlayerStatType, float>();
+            AddStat(d, PlayerStatType.Nutrition, Cfg.Nutrition(soup));
+            AddStat(d, PlayerStatType.Hydration, Cfg.Hydration(soup));
+            AddStat(d, PlayerStatType.Energy, Cfg.Energy(soup));
             d.OnBeforeSerialize();
             return d;
+        }
+
+        private static void AddStat(SerializableDictionary<PlayerStatType, float> d, PlayerStatType type, float value)
+        {
+            if (value != 0f)
+            {
+                d[type] = value;
+            }
         }
 
         // O Mirror limpa a lista de prefabs ao trocar de partida, então confere sempre.
         private static void EnsureRegistered()
         {
             Register(EmptyPlate);
-            Register(TomatoPlate);
-            Register(PotatoPlate);
-            Register(TomatoMug);
-            Register(PotatoMug);
+            foreach (GameObject t in Plates.Values)
+            {
+                Register(t);
+            }
+            foreach (GameObject t in Mugs.Values)
+            {
+                Register(t);
+            }
         }
 
         private static void Register(GameObject template)

@@ -6,12 +6,13 @@ using Object = UnityEngine.Object;
 
 namespace CozinhaExtra
 {
-    // Em todos os PCs: a superfície de encaixe da panela passa a aceitar tomate e batata
-    // (o jogo só aceita maçã, banana, coxa e bife). Assim dá para usar o modo de colocação.
+    // Em todos os PCs: a superfície de encaixe da panela passa a aceitar os ingredientes frescos das
+    // receitas (tomate, batata, cogumelo; o jogo só aceita maçã, banana, coxa e bife). Assim dá para
+    // usar o modo de colocação. Latas não: elas entram pela tecla (despejar).
     // Também guarda a lista de panelas na cena para o host.
     internal static class PotPatcher
     {
-        private static readonly string[] ExtraItems = { "Tomato", "Potato" };
+        private static readonly string[] ExtraItems = Recipes.FreshIds;
         private static float _nextScan;
 
         public static readonly List<Pan> Pots = new List<Pan>();

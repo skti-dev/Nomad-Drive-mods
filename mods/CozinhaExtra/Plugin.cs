@@ -13,7 +13,7 @@ namespace CozinhaExtra
     {
         public const string Guid = "seabra.nomaddrive.cozinhaextra";
         public const string Name = "Cozinha Extra";
-        public const string Version = "1.4.3";
+        public const string Version = "1.5.0";
 
         internal static ManualLogSource Log;
 
@@ -79,11 +79,8 @@ namespace CozinhaExtra
         public static ConfigEntry<float> CookSeconds;
         public static ConfigEntry<int> PortionsPerIngredient;
         public static ConfigEntry<float> EvaporationSeconds;
-
-        public static ConfigEntry<float> TomatoNutrition;
-        public static ConfigEntry<float> TomatoHydration;
-        public static ConfigEntry<float> PotatoNutrition;
-        public static ConfigEntry<float> PotatoHydration;
+        public static ConfigEntry<float> CanHeatSeconds;
+        public static ConfigEntry<int> PortionsPerCan;
 
         public static ConfigEntry<bool> PlatesFromStove;
         public static ConfigEntry<bool> PlateBackAfterEating;
@@ -97,7 +94,7 @@ namespace CozinhaExtra
         public static void Bind(ConfigFile c)
         {
             ConfigEntry<string> key = c.Bind("Geral", "TeclaAcao", "K",
-                "Tecla das ações do mod (pôr água, colocar ingrediente, comer, servir no prato/caneca, pegar prato). " +
+                "Tecla das ações do mod (pôr água, colocar ingrediente, despejar lata, comer, servir no prato/caneca, pegar prato). " +
                 "Nomes do Unity Input System: K, L, G, F5, Numpad1... / Action key.");
             if (Enum.TryParse(key.Value, true, out Key parsed) && parsed != Key.None)
             {
@@ -106,26 +103,25 @@ namespace CozinhaExtra
 
             WaterPerPour = c.Bind("Panela", "AguaPorVez", 0.5f, "Água que cada aperto da tecla coloca na panela (litros do jogo). Vale o do host.");
             PotCapacity = c.Bind("Panela", "CapacidadeAgua", 1f, "Água máxima na panela. Vale o do host.");
-            WaterPerIngredient = c.Bind("Panela", "AguaPorIngrediente", 0.5f, "Água que cada tomate/batata precisa para virar sopa. Vale o do host.");
-            MaxIngredients = c.Bind("Panela", "MaxIngredientes", 2, "Quantos tomates/batatas cabem na panela de uma vez. Vale o do host.");
-            CookSeconds = c.Bind("Panela", "TempoCozimentoSegundos", 60f, "Segundos no fogo aceso até a sopa ficar pronta. Vale o do host.");
-            PortionsPerIngredient = c.Bind("Panela", "PorcoesPorIngrediente", 2, "Porções de sopa que cada tomate/batata rende. Vale o do host.");
-            EvaporationSeconds = c.Bind("Panela", "EvaporacaoSegundos", 60f, "Sopa pronta que fica no fogo aceso perde 1 porção a cada tantos segundos (0 = não evapora). Vale o do host.");
+            WaterPerIngredient = c.Bind("Panela", "AguaPorIngrediente", 0.5f, "Água que cada ingrediente fresco (tomate, batata, cogumelo) precisa para virar sopa. Latas não precisam de água. Vale o do host.");
+            MaxIngredients = c.Bind("Panela", "MaxIngredientes", 2, "Quantos ingredientes (frescos e latas somados) cabem na panela de uma vez. Vale o do host.");
+            CookSeconds = c.Bind("Panela", "TempoCozimentoSegundos", 60f, "Segundos no fogo aceso até a sopa ficar pronta (com ingrediente fresco). Vale o do host.");
+            PortionsPerIngredient = c.Bind("Panela", "PorcoesPorIngrediente", 2, "Porções de sopa que cada ingrediente fresco rende. Vale o do host.");
+            EvaporationSeconds = c.Bind("Panela", "EvaporacaoSegundos", 60f, "Comida pronta que fica no fogo aceso perde 1 porção a cada tantos segundos (0 = não evapora). Vale o do host.");
+            CanHeatSeconds = c.Bind("Panela", "TempoAquecerLataSegundos", 20f, "Segundos no fogo aceso para esquentar o que foi despejado de latas (se a panela também tiver ingrediente fresco, vale o tempo da sopa). Vale o do host.");
+            PortionsPerCan = c.Bind("Panela", "PorcoesPorLata", 2, "Porções que cada lata despejada na panela rende. Vale o do host.");
 
-            TomatoNutrition = c.Bind("SopaTomate", "Nutricao", 15f, "Fome recuperada por porção (a lata de sopa do jogo dá 20).");
-            TomatoHydration = c.Bind("SopaTomate", "Hidratacao", 15f, "Sede recuperada por porção.");
-            PotatoNutrition = c.Bind("SopaBatata", "Nutricao", 18f, "Fome recuperada por porção.");
-            PotatoHydration = c.Bind("SopaBatata", "Hidratacao", 12f, "Sede recuperada por porção.");
+            Recipes.Bind(c);
 
             PlatesFromStove = c.Bind("Prato", "PegarPratoNoFogao", true, "Mirar num fogão com a mão vazia e apertar a tecla dá um prato vazio. Vale o do host.");
             PlatesInWorld = c.Bind("Prato", "PratosNoMapa", true, "Pratos aparecem pelo mapa junto do loot de cozinha e de comida. Vale o do host.");
             PlateChanceKitchen = c.Bind("Prato", "ChancePertoDeCozinha", 0.35f, "Chance (0 a 1) de um prato aparecer do lado de cada loot de cozinha (panela, caneca, frigideira...).");
             PlateChanceFood = c.Bind("Prato", "ChancePertoDeComida", 0.05f, "Chance (0 a 1) de um prato aparecer do lado de cada loot de comida.");
-            PlateBackAfterEating = c.Bind("Prato", "PratoVoltaDepoisDeComer", true, "Depois de comer um prato de sopa, o prato vazio volta para a mão. Vale o do host.");
+            PlateBackAfterEating = c.Bind("Prato", "PratoVoltaDepoisDeComer", true, "Depois de comer um prato de comida da panela, o prato vazio volta para a mão. Vale o do host.");
 
             TestKitEnabled = c.Bind("Teste", "KitDeTeste", false,
                 "Liga o kit de teste: quem hospeda aperta a tecla abaixo e aparecem um fogão, uma panela, " +
-                "2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato e uma mesa na frente (e até 2 canecas de outros mods, se instalados). Para testar o mod; deixe desligado no jogo normal.");
+                "2 tomates, 2 batatas, 2 cogumelos, latas de sopa de tomate, feijão e atum, 2 garrafas de água cheias, uma caneca, um prato e uma mesa na frente (e até 2 canecas de outros mods, se instalados). Para testar o mod; deixe desligado no jogo normal.");
             ConfigEntry<string> kitKey = c.Bind("Teste", "TeclaKitDeTeste", "F8", "Tecla do kit de teste (só para quem hospeda).");
             if (Enum.TryParse(kitKey.Value, true, out Key parsedKit) && parsedKit != Key.None)
             {
@@ -136,9 +132,11 @@ namespace CozinhaExtra
             LiquidMaxY = c.Bind("Visual", "AlturaLiquidoCheia", 0.028f, "Altura do líquido na panela cheia (ajuste fino do visual).");
         }
 
-        public static float Nutrition(SoupType soup) => soup == SoupType.Potato ? PotatoNutrition.Value : TomatoNutrition.Value;
+        public static float Nutrition(SoupType soup) => Recipes.Get(soup)?.Nutrition?.Value ?? 0f;
 
-        public static float Hydration(SoupType soup) => soup == SoupType.Potato ? PotatoHydration.Value : TomatoHydration.Value;
+        public static float Hydration(SoupType soup) => Recipes.Get(soup)?.Hydration?.Value ?? 0f;
+
+        public static float Energy(SoupType soup) => Recipes.Get(soup)?.Energy?.Value ?? 0f;
 
         // Volume que uma porção pronta ocupa na panela (para o nível não pular quando a sopa fica pronta).
         public static float PortionVolume => WaterPerIngredient.Value / Mathf.Max(1, PortionsPerIngredient.Value);
@@ -183,8 +181,21 @@ namespace CozinhaExtra
 
         public static string T(string pt, string en) => Pt ? pt : en;
 
-        public static string Soup(SoupType soup) => soup == SoupType.Potato ? T("sopa de batata", "potato soup") : T("sopa de tomate", "tomato soup");
+        // Nome da receita em frases; receita desconhecida (versão mais nova, arquivo editado) vira "comida".
+        public static string Soup(SoupType soup)
+        {
+            Recipe r = Recipes.Get(soup);
+            return r != null ? T(r.NamePt, r.NameEn) : T("comida", "food");
+        }
 
-        public static string Ingredient(SoupType soup) => soup == SoupType.Potato ? T("batata", "potato") : T("tomate", "tomato");
+        // Ingrediente fresco; receitas que só vêm de lata dizem "lata".
+        public static string Ingredient(SoupType soup)
+        {
+            Recipe r = Recipes.Get(soup);
+            return r != null && r.IngredientPt != null ? T(r.IngredientPt, r.IngredientEn) : T("lata", "can");
+        }
+
+        // "Tomar" sopa, "Comer" feijão/atum.
+        public static bool Drink(SoupType soup) => Recipes.Get(soup)?.Drink ?? true;
     }
 }

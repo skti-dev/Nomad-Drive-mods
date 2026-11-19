@@ -24,7 +24,8 @@ namespace CozinhaExtra
     {
         public float Water;
         public SoupType Soup;
-        public int Raw;
+        public int Raw;         // ingredientes frescos (pedem água)
+        public int Canned;      // latas despejadas esquentando (não pedem água)
         public int Portions;
         public float Progress;
         public float EvapTimer;
@@ -32,7 +33,9 @@ namespace CozinhaExtra
         public bool Dirty = true;
         public float NextProgressSync;
 
-        public bool IsEmpty => Water <= 0.0001f && Raw == 0 && Portions == 0;
+        public bool IsEmpty => Water <= 0.0001f && Raw == 0 && Canned == 0 && Portions == 0;
+
+        public int Pending => Raw + Canned;
 
         public CePotState ToMessage(uint netId) => new CePotState
         {
@@ -42,7 +45,8 @@ namespace CozinhaExtra
             Raw = (byte)Raw,
             Portions = (byte)Mathf.Clamp(Portions, 0, 255),
             Progress = Progress,
-            Evap = EvapTimer
+            Evap = EvapTimer,
+            Canned = (byte)Mathf.Clamp(Canned, 0, 255)
         };
     }
 
@@ -182,7 +186,7 @@ namespace CozinhaExtra
             foreach (KeyValuePair<uint, PotData> pair in Pots)
             {
                 PotData pot = pair.Value;
-                if (pot.Raw <= 0 && pot.Portions <= 0)
+                if (pot.Pending <= 0 && pot.Portions <= 0)
                 {
                     continue;
                 }
@@ -217,17 +221,20 @@ namespace CozinhaExtra
                     pot.Dirty = true;
                 }
 
+                // Só os frescos pedem água; latas só esquentam (mais rápido, se não houver fresco junto).
                 float needed = pot.Raw * Cfg.WaterPerIngredient.Value;
-                if (pot.Raw <= 0 || !heated || pot.Water + 0.0001f < needed)
+                if (pot.Pending <= 0 || !heated || pot.Water + 0.0001f < needed)
                 {
                     continue;
                 }
-                pot.Progress += dt / Mathf.Max(1f, Cfg.CookSeconds.Value);
+                pot.Progress += dt / CookSecondsFor(pot);
                 if (pot.Progress >= 1f)
                 {
-                    pot.Portions += pot.Raw * Mathf.Max(1, Cfg.PortionsPerIngredient.Value);
+                    pot.Portions += pot.Raw * Mathf.Max(1, Cfg.PortionsPerIngredient.Value) +
+                                    pot.Canned * Mathf.Max(1, Cfg.PortionsPerCan.Value);
                     pot.Water = Mathf.Max(0f, pot.Water - needed);
                     pot.Raw = 0;
+                    pot.Canned = 0;
                     pot.Progress = 0f;
                     pot.Dirty = true;
                     Plugin.Log.LogInfo($"Sopa pronta na panela {pair.Key}: {pot.Soup}, {pot.Portions} porções");
@@ -238,6 +245,29 @@ namespace CozinhaExtra
                     pot.Dirty = true;
                 }
             }
+        }
+
+        private static float CookSecondsFor(PotData pot) =>
+            Mathf.Max(1f, pot.Raw > 0 ? Cfg.CookSeconds.Value : Cfg.CanHeatSeconds.Value);
+
+        // Põe um ingrediente na panela (já validado). O primeiro fresco depois de latas passa a valer
+        // o tempo da sopa: o progresso é reescalado para não virar sopa em segundos.
+        private static void AddToPot(PotData pot, SoupType soup, bool canned)
+        {
+            if (!canned && pot.Raw == 0 && pot.Canned > 0 && pot.Progress > 0f)
+            {
+                pot.Progress *= Mathf.Max(1f, Cfg.CanHeatSeconds.Value) / Mathf.Max(1f, Cfg.CookSeconds.Value);
+            }
+            if (canned)
+            {
+                pot.Canned++;
+            }
+            else
+            {
+                pot.Raw++;
+            }
+            pot.Soup = soup;
+            pot.Dirty = true;
         }
 
         private static void OnRequest(NetworkConnectionToClient conn, CeRequest msg)
@@ -368,8 +398,8 @@ namespace CozinhaExtra
         private static void AddIngredient(NetworkConnectionToClient conn, uint potId, uint heldId)
         {
             HeldItem held = Game.ServerHeld(conn, heldId);
-            SoupType soup = held != null ? Game.SoupFor(held.gameObject) : SoupType.None;
-            if (soup == SoupType.None || !TryGetPot(conn, potId, out _, out PotData pot))
+            if (held == null || !Recipes.TryIngredient(held.gameObject, out SoupType soup, out bool canned) ||
+                !TryGetPot(conn, potId, out _, out PotData pot))
             {
                 return;
             }
@@ -383,17 +413,16 @@ namespace CozinhaExtra
                 Reply(conn, CeFeedback.OtherSoup, pot.Soup);
                 return;
             }
-            if (pot.Raw >= Mathf.Max(1, Cfg.MaxIngredients.Value))
+            if (pot.Pending >= Mathf.Max(1, Cfg.MaxIngredients.Value))
             {
                 Reply(conn, CeFeedback.PotFull);
                 return;
             }
             // Mesmo caminho que o jogo usa para gastar uma chave no pé de cabra: tira da mão e destrói.
+            // A lata some junto (o jogo não tem lata vazia).
             held.ServerConsumeFromHand();
-            pot.Raw++;
-            pot.Soup = soup;
-            pot.Dirty = true;
-            Reply(conn, CeFeedback.IngredientAdded, soup);
+            AddToPot(pot, soup, canned);
+            Reply(conn, canned ? CeFeedback.CanPoured : CeFeedback.IngredientAdded, soup);
         }
 
         private static void EatFromPot(NetworkConnectionToClient conn, uint potId)
@@ -427,7 +456,7 @@ namespace CozinhaExtra
                 Reply(conn, CeFeedback.MugNotEmpty);
                 return;
             }
-            if (pot.Portions <= 0)
+            if (pot.Portions <= 0 || Recipes.Get(pot.Soup) == null)
             {
                 Reply(conn, CeFeedback.PotEmpty);
                 return;
@@ -435,6 +464,7 @@ namespace CozinhaExtra
             GameObject template = isMug ? Items.FilledMug(pot.Soup) : Items.FilledPlate(pot.Soup);
             if (template == null)
             {
+                ReplyPlateOnly(conn, pot.Soup, isMug);
                 return;
             }
             SoupType soup = pot.Soup;
@@ -460,7 +490,7 @@ namespace CozinhaExtra
             {
                 return;
             }
-            if (!Pots.TryGetValue(pan.netId, out PotData pot) || pot.Portions <= 0)
+            if (!Pots.TryGetValue(pan.netId, out PotData pot) || pot.Portions <= 0 || Recipes.Get(pot.Soup) == null)
             {
                 Reply(conn, CeFeedback.PotEmpty);
                 return;
@@ -494,6 +524,7 @@ namespace CozinhaExtra
             GameObject template = isMug ? Items.FilledMug(pot.Soup) : Items.FilledPlate(pot.Soup);
             if (template == null)
             {
+                ReplyPlateOnly(conn, pot.Soup, isMug);
                 return;
             }
             SoupType soup = pot.Soup;
@@ -533,6 +564,18 @@ namespace CozinhaExtra
             Reply(conn, CeFeedback.Served, soup);
         }
 
+        // Receita que não vai em caneca. Cliente 1.4.x não conhece o aviso novo: recebe "sem sopa".
+        private static void ReplyPlateOnly(NetworkConnectionToClient conn, SoupType soup, bool isMug)
+        {
+            if (!isMug)
+            {
+                return;
+            }
+            bool knows = conn == NetworkServer.localConnection ||
+                         (ProtocolOf.TryGetValue(conn.connectionId, out uint protocol) && protocol >= Net.ProtocolRecipes);
+            Reply(conn, knows ? CeFeedback.PlateOnly : CeFeedback.PotEmpty, soup);
+        }
+
         // Tira o item de qualquer superfície de encaixe antes de destruí-lo, para ela não ficar "ocupada".
         private static void Unplace(uint itemNetId)
         {
@@ -545,7 +588,7 @@ namespace CozinhaExtra
             }
         }
 
-        // Tomate/batata colocado na panela pelo modo de colocação do jogo vira ingrediente.
+        // Ingrediente fresco (tomate, batata, cogumelo) colocado na panela pelo modo de colocação vira ingrediente.
         private static void AbsorbPlacedIngredients(float now)
         {
             foreach (Pan pan in PotPatcher.Pots)
@@ -570,8 +613,8 @@ namespace CozinhaExtra
                     {
                         continue;
                     }
-                    SoupType soup = Game.SoupFor(identity.gameObject);
-                    if (soup == SoupType.None)
+                    // Latas só entram pela tecla (despejar); se alguma superfície aceitar, ficam como item normal.
+                    if (!Recipes.TryIngredient(identity.gameObject, out SoupType soup, out bool canned) || canned)
                     {
                         continue;
                     }
@@ -599,7 +642,7 @@ namespace CozinhaExtra
                     {
                         problem = CeFeedback.OtherSoup;
                     }
-                    else if (pot.Raw >= Mathf.Max(1, Cfg.MaxIngredients.Value))
+                    else if (pot.Pending >= Mathf.Max(1, Cfg.MaxIngredients.Value))
                     {
                         problem = CeFeedback.PotFull;
                     }
@@ -616,9 +659,7 @@ namespace CozinhaExtra
                     NetworkServer.Destroy(identity.gameObject);
                     PlacedSince.Remove(id);
                     PlacedWarned.Remove(id);
-                    pot.Raw++;
-                    pot.Soup = soup;
-                    pot.Dirty = true;
+                    AddToPot(pot, soup, false);
                     BroadcastResult(CeFeedback.IngredientAdded, soup, pan.transform);
                 }
             }
@@ -698,7 +739,7 @@ namespace CozinhaExtra
             if (pot.Portions <= 0)
             {
                 pot.Portions = 0;
-                if (pot.Raw == 0)
+                if (pot.Pending == 0)
                 {
                     pot.Soup = SoupType.None;
                 }
@@ -959,15 +1000,24 @@ namespace CozinhaExtra
                     {
                         continue;
                     }
-                    Saved[f[0]] = new PotData
+                    PotData stored = new PotData
                     {
                         Guid = f[0],
                         Water = float.Parse(f[1], CultureInfo.InvariantCulture),
                         Soup = (SoupType)byte.Parse(f[2], CultureInfo.InvariantCulture),
                         Raw = int.Parse(f[3], CultureInfo.InvariantCulture),
                         Portions = int.Parse(f[4], CultureInfo.InvariantCulture),
-                        Progress = float.Parse(f[5], CultureInfo.InvariantCulture)
+                        Progress = float.Parse(f[5], CultureInfo.InvariantCulture),
+                        // 1.5.0: 7º campo opcional (a 1.4.x grava 6 e lê só os 6 primeiros).
+                        Canned = f.Length >= 7 ? int.Parse(f[6], CultureInfo.InvariantCulture) : 0
                     };
+                    // Receita que esta versão não conhece (ex.: voltou de uma versão mais nova): descarta.
+                    if (stored.Soup != SoupType.None && Recipes.Get(stored.Soup) == null)
+                    {
+                        Plugin.Log.LogWarning($"Panela {f[0]}: receita {(byte)stored.Soup} desconhecida nesta versão; conteúdo descartado.");
+                        continue;
+                    }
+                    Saved[f[0]] = stored;
                 }
             }
             catch (Exception e)
@@ -989,6 +1039,7 @@ namespace CozinhaExtra
                 Water = stored.Water,
                 Soup = stored.Soup,
                 Raw = stored.Raw,
+                Canned = stored.Canned,
                 Portions = stored.Portions,
                 Progress = stored.Progress
             };
@@ -1021,7 +1072,7 @@ namespace CozinhaExtra
             _changed = false;
             try
             {
-                StringBuilder sb = new StringBuilder("# Cozinha Extra: conteúdo das panelas (guid|agua|sopa|cruas|porcoes|progresso)\n");
+                StringBuilder sb = new StringBuilder("# Cozinha Extra: conteúdo das panelas (guid|agua|sopa|cruas|porcoes|progresso|latas)\n");
                 foreach (PotData pot in Saved.Values)
                 {
                     sb.Append(pot.Guid).Append('|')
@@ -1029,7 +1080,8 @@ namespace CozinhaExtra
                         .Append(((byte)pot.Soup).ToString(CultureInfo.InvariantCulture)).Append('|')
                         .Append(pot.Raw.ToString(CultureInfo.InvariantCulture)).Append('|')
                         .Append(pot.Portions.ToString(CultureInfo.InvariantCulture)).Append('|')
-                        .Append(pot.Progress.ToString("0.###", CultureInfo.InvariantCulture)).Append('\n');
+                        .Append(pot.Progress.ToString("0.###", CultureInfo.InvariantCulture)).Append('|')
+                        .Append(pot.Canned.ToString(CultureInfo.InvariantCulture)).Append('\n');
                 }
                 File.WriteAllText(FilePath, sb.ToString());
             }

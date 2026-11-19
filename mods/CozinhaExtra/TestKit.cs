@@ -24,7 +24,8 @@ namespace CozinhaExtra
         private static readonly string[] Kit =
         {
             "Stove01", "CookingPot-01",
-            "Tomato", "Tomato", "Potato", "Potato",
+            "Tomato", "Tomato", "Potato", "Potato", "Mushroom", "Mushroom",
+            "TomatoSoup", "BakedBeans", "TunaCan",
             "BottleWater", "BottleWater", "Mug"
         };
 

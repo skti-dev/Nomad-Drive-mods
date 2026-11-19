@@ -41,23 +41,6 @@ namespace CozinhaExtra
             return ItemId(pan.gameObject).StartsWith("CookingPot", StringComparison.OrdinalIgnoreCase) ? pan : null;
         }
 
-        public static SoupType SoupFor(GameObject go)
-        {
-            if (go == null || go.GetComponent<Food>() == null)
-            {
-                return SoupType.None;
-            }
-            switch (ItemId(go))
-            {
-                case "Tomato":
-                    return SoupType.Tomato;
-                case "Potato":
-                    return SoupType.Potato;
-                default:
-                    return SoupType.None;
-            }
-        }
-
         public static bool IsRotten(GameObject go)
         {
             Food food = go != null ? go.GetComponent<Food>() : null;
