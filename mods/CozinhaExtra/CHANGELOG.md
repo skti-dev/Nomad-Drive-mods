@@ -1,6 +1,6 @@
 # Changelog — Cozinha Extra
 
-## [1.4.3] — não lançada (spec 0001)
+## [1.4.3] — 2026-11-19 (spec 0001)
 - Corrigido: canecas de outros mods (ex.: coloridas do Nomad Items) viravam a caneca branca do jogo
   ao servir sopa e depois de tomar. A caneca de sopa fica com o modelo e o ícone da caneca usada e a
   mesma caneca volta depois de tomar; vale também depois de salvar e carregar.

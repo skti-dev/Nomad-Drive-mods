@@ -30,5 +30,5 @@
 - [x] `dotnet build mods/CozinhaExtra -c Release` sem erros nem avisos novos (copia a DLL para o jogo)
 - [x] RefCheck sem faltas
 - [x] Teste no jogo, solo — aprovado pelo Augusto em 2026-11-19
-- [ ] Teste em co-op — passos 2b e 5 do plano (Augusto + amigo) — **pendente** antes de publicar
+- [ ] Teste em co-op — passos 2b e 5 do plano (Augusto + amigo) — não feito antes de publicar (decisão do Augusto, 2026-11-19); conferir na próxima partida em co-op
 - [x] `BepInEx\LogOutput.log` sem erros do mod (teste solo)
