@@ -25,4 +25,4 @@ Status: `rascunho → aprovada → em implementação → concluída`. Só o hum
 | Nº | Mod | Tipo | Título | Status |
 |---|---|---|---|---|
 | [0001](features/0001-cozinha-canecas-coloridas/spec.md) | CozinhaExtra | correção | Canecas coloridas mantêm a cor | concluída (1.4.3) |
-| [0002](features/0002-cozinha-mais-receitas/spec.md) | CozinhaExtra | melhoria | Mais receitas na panela | rascunho |
+| [0002](features/0002-cozinha-mais-receitas/spec.md) | CozinhaExtra | melhoria | Mais receitas na panela | fase 1 concluída (1.5.0); fase 2 (geleia) pendente |

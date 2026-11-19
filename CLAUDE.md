@@ -12,7 +12,7 @@ Dono: Augusto (dev web fullstack; explique conceitos de C#/Unity/Mirror quando s
 ## Mods
 | Mod | Pasta | Versão | Nexus |
 |---|---|---|---|
-| Cozinha Extra (*Extra Cooking*) | `mods/CozinhaExtra/` | 1.4.3 | sopas, pratos e canecas |
+| Cozinha Extra (*Extra Cooking*) | `mods/CozinhaExtra/` | 1.5.0 | sopas, latas aquecidas, pratos e canecas |
 | Sponge Wash | `mods/SpongeWash/` | 1.2.0 | lavar a esponja |
 
 ## As 6 invariantes (detalhes em `specs/system/invariantes.md`)

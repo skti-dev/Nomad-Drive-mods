@@ -4,7 +4,7 @@ Mods BepInEx para o **Nomad Drive**, feitos para co-op e publicados no Nexus.
 
 | Mod | Versão | O que faz |
 |---|---|---|
-| [Cozinha Extra](mods/CozinhaExtra/LEIA-ME.txt) (*Extra Cooking*) | 1.4.3 | sopas na panela, pratos e canecas |
+| [Cozinha Extra](mods/CozinhaExtra/LEIA-ME.txt) (*Extra Cooking*) | 1.5.0 | sopas e latas aquecidas na panela, pratos e canecas |
 | [Sponge Wash](mods/SpongeWash/LEIA-ME.txt) | 1.2.0 | lavar a esponja com água |
 
 ## Requisitos

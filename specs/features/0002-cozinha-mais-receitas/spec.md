@@ -1,6 +1,6 @@
 # [0002] Mais receitas na panela: sopa de cogumelo, enlatados aquecidos e geleia
 
-- Status: fase 1 (1.5.0) testada e aprovada pelo Augusto (2026-11-19); fase 2 (geleia) pendente
+- Status: fase 1 publicada na 1.5.0 (2026-11-19); fase 2 (geleia, 1.5.1) pendente
 - Tipo: melhoria
 - Mod: CozinhaExtra
 - Versão alvo: **1.5.0** (fase 1: base de receitas, cogumelo, enlatados) e **1.5.1** (fase 2: geleia)

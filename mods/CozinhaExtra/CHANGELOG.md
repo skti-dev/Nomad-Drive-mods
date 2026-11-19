@@ -1,6 +1,6 @@
 # Changelog — Cozinha Extra
 
-## [1.5.0] — não publicada (spec 0002, fase 1)
+## [1.5.0] — 2026-11-19 (spec 0002, fase 1)
 - Novo: **sopa de cogumelo** (água + cogumelo, como as outras sopas). Não envenena.
 - Novo: **latas na panela** — "Despejar na panela [K]" com lata de sopa de tomate, feijão ou atum.
   A lata some, não precisa de água e esquenta em 20 s; cada lata rende 2 porções.
