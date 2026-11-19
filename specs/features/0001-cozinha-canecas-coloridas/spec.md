@@ -1,6 +1,6 @@
 # [0001] Canecas coloridas mantêm a cor ao servir sopa e ao devolver
 
-- Status: em implementação
+- Status: concluída (em `staging`; teste em co-op pendente antes de publicar)
 - Tipo: correção
 - Mod: CozinhaExtra
 - Versão alvo: 1.4.3

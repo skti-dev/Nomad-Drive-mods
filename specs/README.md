@@ -24,5 +24,5 @@ Status: `rascunho → aprovada → em implementação → concluída`. Só o hum
 ## Specs
 | Nº | Mod | Tipo | Título | Status |
 |---|---|---|---|---|
-| [0001](features/0001-cozinha-canecas-coloridas/spec.md) | CozinhaExtra | correção | Canecas coloridas mantêm a cor | em implementação |
+| [0001](features/0001-cozinha-canecas-coloridas/spec.md) | CozinhaExtra | correção | Canecas coloridas mantêm a cor | concluída (staging) |
 | [0002](features/0002-cozinha-mais-receitas/spec.md) | CozinhaExtra | melhoria | Mais receitas na panela | rascunho |

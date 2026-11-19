@@ -29,6 +29,6 @@
 ## Validação final (Definition of Done)
 - [x] `dotnet build mods/CozinhaExtra -c Release` sem erros nem avisos novos (copia a DLL para o jogo)
 - [x] RefCheck sem faltas
-- [ ] Teste no jogo, solo — passos 1–4, 6 e 7 do plano (Augusto)
-- [ ] Teste em co-op — passos 2b e 5 do plano (Augusto + amigo)
-- [ ] `BepInEx\LogOutput.log` sem erros do mod
+- [x] Teste no jogo, solo — aprovado pelo Augusto em 2026-11-19
+- [ ] Teste em co-op — passos 2b e 5 do plano (Augusto + amigo) — **pendente** antes de publicar
+- [x] `BepInEx\LogOutput.log` sem erros do mod (teste solo)
