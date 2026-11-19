@@ -80,7 +80,8 @@ Kit de teste
 Para testar sem procurar itens: no mesmo arquivo, seção [Teste], mude KitDeTeste
 para true e reabra o jogo. Quem hospeda aperta F8 e aparecem na frente um fogão,
 uma panela, 2 tomates, 2 batatas, 2 garrafas de água cheias, uma caneca, um prato
-e uma mesa.
+e uma mesa. Com um mod de canecas coloridas instalado (ex.: Nomad Items), vêm
+também 2 canecas coloridas.
 Vem desligado. Desligue de novo depois de testar.
 
 Desinstalar
