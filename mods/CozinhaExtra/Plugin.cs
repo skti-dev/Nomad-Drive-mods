@@ -13,7 +13,7 @@ namespace CozinhaExtra
     {
         public const string Guid = "seabra.nomaddrive.cozinhaextra";
         public const string Name = "Cozinha Extra";
-        public const string Version = "1.4.2";
+        public const string Version = "1.4.3";
 
         internal static ManualLogSource Log;
 
@@ -47,6 +47,7 @@ namespace CozinhaExtra
         private void Update()
         {
             Items.Tick();
+            MugSkins.Tick();
             Server.Tick();
             PotPatcher.Tick();
             Client.Tick();

@@ -14,7 +14,7 @@ CATEGORIA / TAGS
 Categoria: Gameplay
 Requisito (Requirements > Nexus mods): BepInExPack_NomadDrive
   https://www.nexusmods.com/nomaddrive/mods/7
-Versão: 1.4.2
+Versão: 1.4.3
 Idiomas: English, Português (Brasil) - segue o idioma das opções do jogo
 
 =====================================================================
@@ -43,6 +43,7 @@ Looking at a pot shows what is inside under the crosshair (water, cooking progre
 [*][b]Serve from the pot:[/b] holding the pot with soup, aim at an empty plate or mug (on a table, the floor, a shelf) and press [b]K[/b].
 [*]Plates and mugs of soup are normal food items: eat with the use button, they fit in the hotbar and fill both hunger and thirst.
 [*]After eating, the empty plate or the empty mug goes back to your hand.
+[*]Mugs from other mods (like the coloured mugs from Nomad Items) keep their colour: the soup mug looks the same and you get the same mug back.
 [*]Empty plates stack: place a plate on top of another with the placement mode.
 [/list]
 
@@ -98,6 +99,9 @@ Créditos: Nomad Drive (c) Indie Devil. Requer BepInEx (LGPL-2.1) via BepInExPac
 =====================================================================
 CHANGELOG (aba Logs, se quiser)
 =====================================================================
+1.4.3
+- Corrigido: canecas coloridas de outros mods (Nomad Items) viravam a caneca branca do jogo ao servir sopa e depois de tomar
+- A caneca de sopa fica da cor da caneca usada (modelo e ícone) e a mesma caneca volta depois de tomar, também depois de salvar
 1.4.2
 - Corrigido: caneca de sopa não encaixava em mesas e prateleiras (colisão deslocada)
 - Caneca de sopa é segurada com a mesma pose de mão da caneca do jogo
