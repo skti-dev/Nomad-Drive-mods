@@ -37,7 +37,21 @@ Referência do que já foi descoberto. **Confirme no código descompilado antes 
 ## Comidas do jogo (`Assets/_Project/Features/Consumables/` e `Cooking/`)
 Apple, Banana, Orange, Watermelon, Tomato, Potato, **Mushroom**, BakedBeans (lata), **TomatoSoup** (lata),
 **TunaCan** (lata), PeanutButter, Cereal, Chips-01, ChocolateBar-01..03, Soda, Beer, Drumstick, Steak.
-(Não há frutas vermelhas nem açúcar.)
+(Não há frutas vermelhas, açúcar nem lata vazia.)
+
+Valores lidos dos bundles (jogo de 2026-11-04; `ConsumableConfig.playerStatCollection`, 0 = Nutrition, 1 = Hydration):
+| Item | Fome | Sede | Observação |
+|---|---|---|---|
+| Mushroom | 20 | – | **venenoso cru** (`FoodConfig.isPoisonous = 1`); malha em `Mushroom-01`, **sem filho `Model`** |
+| Apple / Banana | 8 | – | |
+| Orange | 5 | 5 | |
+| Watermelon | 15 | 25 | |
+| Tomato / Potato | 6 / 5 | 3 / – | |
+| TomatoSoup / BakedBeans / TunaCan (latas) | 20 / 25 / 25 | – | |
+| PeanutButter | 20 | – | |
+
+Todas são `Food` comum; só `OrganicFood` (coxa, bife) é cozido pelo jogo (`CookingHeatZone`, `Pan`). Nenhuma comida dá
+energia; energia máxima = 100 (`PlayerStatsManager`), e `ApplyConsumableEffects` aplica `Energy` de comida normalmente.
 
 ## Armadilhas já pagas
 - **Stripping:** `Mathf.PI` e outros não existem; rode o RefCheck.
@@ -49,6 +63,9 @@ Apple, Banana, Orange, Watermelon, Tomato, Potato, **Mushroom**, BakedBeans (lat
   recria do prefab quando volta (exceto preso a veículo não cortável). Estado visual mandado por mensagem
   precisa ser guardado por `netId` e reaplicado quando o objeto reaparece.
 - Mensagem nova do mod ⇒ versione pelo Hello (`CeRequest.Target` = protocolo) para não derrubar cliente antigo.
+- Campo novo numa mensagem existente: só no fim e lido com `reader.Remaining > 0` (o Mirror separa as mensagens do
+  lote por tamanho, `Unbatcher`; ler além do fim dá exceção e o `WrapHandler` desconecta).
+- Item com assetId desconhecido no cliente: o Mirror só loga erro e não cria o objeto (não desconecta).
 - **Moldes** ficam sob um objeto **inativo** (o `Awake` do jogo não roda no molde).
 - `ilspycmd` precisa de `DOTNET_ROLL_FORWARD=Major` (o script já faz).
 - PowerShell `Get-Content`/`Set-Content` estraga UTF-8 (acentos).
